@@ -36,7 +36,12 @@ function RoleSwitcher(){
 
 function LoginForm(){
     return(
-        <div>LoginForm</div>
+        <div>
+        <PhoneInput />
+        <PasswordInput />
+        <ForgotPasswordLink />
+        <LoginButton />
+        </div>
     )
 }
 
@@ -49,5 +54,11 @@ function Divider(){
 function GoogleButton(){
     return(
         <div>GoogleButton</div>
+    )
+}
+
+function SignupPrompt(){
+    return(
+        <div>SignupPrompt</div>
     )
 }
