@@ -4,6 +4,7 @@ function LoginPage(){
 const [username,setUsername]=useState("");
 const [password,setPassword]=useState("");
 const [role,setRole]=useState("commuter");
+
     return(
    <div>
     <LoginCard username={username} setUsername={setUsername} password={password} setPassword={setPassword} role={role} setRole={setRole}/>
@@ -59,10 +60,24 @@ function RoleSwitcher({role,setRole}){
     );
 }
 
-function LoginForm({username,setUsername,password,setPassword}){
+function LoginForm({username,setUsername,password,setPassword,role}){
+    const [error,setError]=useState("");
     function handleSubmit(e){
         e.preventDefault();
-        console.log(username,password)
+        if(username.trim()===""&& password.trim()===""){
+            setError("Username and passowrd are required");
+            return;
+        }
+        if(username.trim()===""){
+            setError("username is required");
+            return;
+        }
+        if(password.trim()===""){
+            setError("password is required");
+            return;
+        }
+        setError("");
+        console.log(username,password,role);
     }
     return(
         <form onSubmit={handleSubmit}>
