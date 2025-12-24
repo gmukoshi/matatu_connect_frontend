@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "../index.css";
 import matatuIcon from "../assets/Matatu_icon.png";
 
-function AdminDashboard() {
+function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -63,4 +63,4 @@ function AdminDashboard() {
     </main>
   );
 }
-export default AdminDashboard; 
+export default AdminLogin; 

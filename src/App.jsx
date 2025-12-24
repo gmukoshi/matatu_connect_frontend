@@ -2,16 +2,20 @@ import LoginPage from "./pages/LoginPage.jsx";
 import Commutersignup from "./pages/Commutersignup.jsx";
 import ManagerSignup from  "./pages/ManagerSignup.jsx";
 import DriverSignup from "./pages/DriverSignup.jsx";
-import AdminDashboard from "./pages/AdminDashboard.jsx";
+import AdminDashboard from "./pages/AdminLogin.jsx";
+import {Routes, Route} from "react-router-dom";
+import AdminLogin from "./pages/AdminLogin.jsx";
+
 function App() {
   return (
-  <>
-  < AdminDashboard />
-  <LoginPage />
-  <Commutersignup />
-  <ManagerSignup />
-  <DriverSignup />
-  </>
+  <Routes>
+  
+  < Route path="/admin" element={<AdminLogin />}  />
+  < Route LoginPage path="/Login-Page" element={<LoginPage />} />
+  < Route Commutersignup path= "/Commuter-signup" element={<Commutersignup />} />
+  < Route ManagerSignup path="/Manager-Signup" element={< ManagerSignup/> }/>
+  < Route DriverSignup path="/Driver-Signup" element={<DriverSignup />} />
+  </Routes>
 );}
 
 export default App;
