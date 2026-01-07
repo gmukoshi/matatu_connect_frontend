@@ -4,35 +4,288 @@
 @tailwind components;
 @tailwind utilities;
 
-/* GLOBAL BASE */
-html,
-body,
-#root {
-  height: 100%;
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100;
+  }
 }
 
-body {
-  @apply bg-background text-text-main font-sans antialiased;
-  margin: 0;
-}
+@layer components {
+  /* ========== GLOBAL BACKGROUNDS ========== */
+  .mc-page {
+    @apply min-h-screen relative overflow-hidden bg-slate-950 text-slate-100;
+  }
 
-/* BUTTONS */
-.btn-primary {
-  @apply bg-primary text-white px-6 py-3 rounded-lg font-medium
-         hover:bg-primary-hover transition shadow-sm hover:shadow-md;
-}
+  .mc-bg {
+    @apply absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900;
+  }
 
-.btn-secondary {
-  @apply bg-secondary text-white px-6 py-3 rounded-lg font-medium
-         hover:bg-secondary-hover transition shadow-sm hover:shadow-md;
-}
+  .mc-grid {
+    @apply pointer-events-none absolute inset-0 opacity-[0.08]
+    [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)]
+    [background-size:48px_48px];
+  }
 
-.btn-outline {
-  @apply border border-secondary text-secondary px-6 py-3 rounded-lg
-         hover:bg-secondary hover:text-white transition;
-}
+  .mc-blob-a {
+    @apply pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl;
+  }
+  .mc-blob-b {
+    @apply pointer-events-none absolute top-24 left-60 h-56 w-56 rounded-full bg-sky-500/10 blur-3xl;
+  }
+  .mc-blob-c {
+    @apply pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl;
+  }
 
-/* CARDS */
-.card {
-  @apply bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition;
+  /* Container */
+  .mc-shell {
+    @apply relative mx-auto w-full max-w-6xl px-6 py-8;
+  }
+
+  /* ========== GLASS UI ========== */
+  .mc-glass {
+    @apply rounded-3xl bg-white/5 ring-1 ring-white/10 backdrop-blur-xl;
+  }
+
+  .mc-card {
+    @apply mc-glass shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)];
+  }
+
+  .mc-card-pad {
+    @apply p-6 sm:p-8;
+  }
+
+  .mc-section {
+    @apply mc-card p-5;
+  }
+
+  /* ========== TEXT ========== */
+  .mc-h1 {
+    @apply text-4xl font-semibold leading-tight;
+  }
+
+  .mc-h2 {
+    @apply text-xl font-semibold;
+  }
+
+  .mc-muted {
+    @apply text-slate-400;
+  }
+
+  .mc-label {
+    @apply text-[11px] uppercase tracking-wider text-slate-400;
+  }
+
+  /* ========== BADGES / PILLS ========== */
+  .mc-pill {
+    @apply inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2
+    text-xs font-semibold text-emerald-300 ring-1 ring-emerald-500/20;
+  }
+
+  .mc-badge {
+    @apply inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5
+    text-xs text-slate-200 ring-1 ring-white/10;
+  }
+
+  .mc-dot {
+    @apply h-2 w-2 rounded-full bg-emerald-400;
+  }
+
+  /* ========== BUTTONS ========== */
+  .mc-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3
+    font-semibold transition outline-none;
+  }
+
+  .mc-btn-primary {
+    @apply mc-btn bg-emerald-500 text-slate-950 hover:bg-emerald-400;
+  }
+
+  .mc-btn-secondary {
+    @apply mc-btn bg-white/5 text-slate-200 ring-1 ring-white/10 hover:bg-white/10;
+  }
+
+  .mc-btn-ghost {
+    @apply mc-btn bg-transparent text-slate-200 hover:bg-white/5 ring-1 ring-white/10;
+  }
+
+  .mc-btn-sm {
+    @apply rounded-xl px-3 py-2 text-sm;
+  }
+
+  /* ========== INPUTS ========== */
+  .mc-input {
+    @apply mt-2 w-full rounded-2xl bg-slate-900/50 px-4 py-3
+    text-slate-100 placeholder:text-slate-500
+    ring-1 ring-white/10 outline-none
+    focus:ring-2 focus:ring-emerald-500/50;
+  }
+
+  .mc-input-with-icon {
+    @apply relative;
+  }
+
+  .mc-input-icon-left {
+    @apply absolute left-4 top-1/2 -translate-y-1/2 text-slate-500;
+  }
+
+  .mc-input-pad-left {
+    @apply pl-11;
+  }
+
+  /* ========== TABS (login commuter/driver/manager) ========== */
+  .mc-tabs {
+    @apply grid grid-cols-3 rounded-2xl bg-white/5 ring-1 ring-white/10 p-1;
+  }
+
+  .mc-tab {
+    @apply rounded-xl py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 transition;
+  }
+
+  .mc-tab-active {
+    @apply bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/25;
+  }
+
+  /* ========== DIVIDERS ========== */
+  .mc-divider {
+    @apply flex items-center gap-3;
+  }
+
+  .mc-divider-line {
+    @apply h-px flex-1 bg-white/10;
+  }
+
+  .mc-divider-text {
+    @apply text-xs text-slate-500;
+  }
+
+  /* ========== AUTH LAYOUTS (signup, login, manager registration, driver registration) ========== */
+  .mc-auth-grid {
+    @apply mt-10 grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16;
+  }
+
+  .mc-auth-card {
+    @apply mc-card mx-auto w-full max-w-md;
+  }
+
+  /* ========== DASHBOARD LAYOUTS (driver + super admin) ========== */
+  .mc-app {
+    @apply min-h-screen bg-slate-950 text-slate-100;
+  }
+
+  .mc-app-grid {
+    @apply min-h-screen grid grid-cols-1 lg:grid-cols-[260px_1fr];
+  }
+
+  .mc-sidebar {
+    @apply hidden lg:flex flex-col gap-6 p-6 bg-white/5 ring-1 ring-white/10;
+  }
+
+  .mc-sidebrand {
+    @apply flex items-center gap-3;
+  }
+
+  .mc-nav {
+    @apply space-y-2;
+  }
+
+  .mc-nav-item {
+    @apply flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-slate-200
+    hover:bg-white/5 transition;
+  }
+
+  .mc-nav-item-active {
+    @apply bg-emerald-500/15 ring-1 ring-emerald-500/25;
+  }
+
+  .mc-topbar {
+    @apply flex items-center justify-between gap-4 p-6;
+  }
+
+  .mc-search {
+    @apply w-full max-w-md rounded-2xl bg-white/5 ring-1 ring-white/10 px-4 py-2.5
+    text-sm text-slate-200 placeholder:text-slate-500 outline-none
+    focus:ring-2 focus:ring-emerald-500/40;
+  }
+
+  .mc-stat {
+    @apply mc-section;
+  }
+
+  .mc-stat-title {
+    @apply text-xs text-slate-400;
+  }
+
+  .mc-stat-value {
+    @apply mt-1 text-2xl font-semibold;
+  }
+
+  /* ========== MAP SCREEN (nearby panel + controls) ========== */
+  .mc-map {
+    @apply relative min-h-screen overflow-hidden;
+  }
+
+  .mc-map-overlay {
+    @apply absolute inset-0 pointer-events-none;
+  }
+
+  .mc-map-panel {
+    @apply pointer-events-auto mc-card p-5 w-[320px] max-w-[90vw];
+  }
+
+  .mc-map-controls {
+    @apply pointer-events-auto absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3;
+  }
+
+  .mc-icon-btn {
+    @apply grid h-11 w-11 place-items-center rounded-2xl bg-white/5 ring-1 ring-white/10
+    hover:bg-white/10 transition;
+  }
+
+  /* ========== MODALS (seat selection, payment confirm) ========== */
+  .mc-modal-wrap {
+    @apply fixed inset-0 grid place-items-center bg-black/60 p-4;
+  }
+
+  .mc-modal {
+    @apply mc-card w-full max-w-4xl overflow-hidden;
+  }
+
+  .mc-modal-header {
+    @apply flex items-center justify-between p-6;
+  }
+
+  .mc-close {
+    @apply mc-icon-btn;
+  }
+
+  /* Seat chips */
+  .mc-seat {
+    @apply grid h-12 w-12 place-items-center rounded-full ring-1 ring-white/10
+    bg-white/5 text-sm font-semibold text-slate-200;
+  }
+
+  .mc-seat-selected {
+    @apply bg-emerald-500 text-slate-950 ring-1 ring-emerald-400/40;
+  }
+
+  .mc-seat-occupied {
+    @apply bg-white/10 text-slate-500;
+  }
+
+  /* Payment confirmation card */
+  .mc-pay-card {
+    @apply mc-card mx-auto w-full max-w-md p-8;
+  }
+
+  .mc-progress {
+    @apply h-2 w-full rounded-full bg-white/10 overflow-hidden;
+  }
+
+  .mc-progress-bar {
+    @apply h-full bg-emerald-500;
+  }
 }
