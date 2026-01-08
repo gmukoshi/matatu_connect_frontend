@@ -1,25 +1,78 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import {
+  Home,
+  LayoutDashboard,
+  Users,
+  Bus,
+  Route,
+  Settings,
+  LogOut,
+} from "lucide-react";
 
 const Sidebar = ({ role }) => {
+  const { pathname } = useLocation();
+
+  const linkClass = (path) =>
+    `flex items-center gap-3 px-4 py-3 rounded-xl transition
+     ${
+       pathname === path
+         ? "bg-primary/20 text-primary"
+         : "text-text-muted hover:bg-white/5 hover:text-white"
+     }`;
+
   return (
-    <aside className="w-64 bg-gray-800 text-white p-4 flex-shrink-0">
-      <h2 className="text-lg font-bold mb-4">Menu</h2>
-      <ul className="space-y-2">
+    <aside className="hidden md:flex w-64 flex-col bg-surface-dark border-r border-white/10">
+      {/* BRAND */}
+      <div className="px-6 py-6 border-b border-white/10">
+        <h1 className="text-lg font-bold text-white">Matatu Connect</h1>
+        <p className="text-xs text-text-muted uppercase">{role} portal</p>
+      </div>
+
+      {/* NAV */}
+      <nav className="flex-1 px-3 py-6 space-y-2">
+        <Link to="/" className={linkClass("/")}>
+          <Home size={18} /> Home
+        </Link>
+
         {role === "driver" && (
-          <li>
-            <Link to="/driver-dashboard">Driver Dashboard</Link>
-          </li>
+          <Link to="/driver-dashboard" className={linkClass("/driver-dashboard")}>
+            <LayoutDashboard size={18} /> Dashboard
+          </Link>
         )}
+
         {role === "commuter" && (
-          <li>
-            <Link to="/commuter-dashboard">Commuter Dashboard</Link>
-          </li>
+          <Link to="/commuter-dashboard" className={linkClass("/commuter-dashboard")}>
+            <LayoutDashboard size={18} /> Dashboard
+          </Link>
         )}
-        <li>
-          <Link to="/">Home</Link>
-        </li>
-      </ul>
+
+        {role === "manager" && (
+          <>
+            <Link to="/dashboard-overview" className={linkClass("/dashboard-overview")}>
+              <LayoutDashboard size={18} /> Overview
+            </Link>
+            <button className={linkClass("#")}>
+              <Bus size={18} /> Fleet
+            </button>
+            <button className={linkClass("#")}>
+              <Users size={18} /> Drivers
+            </button>
+            <button className={linkClass("#")}>
+              <Route size={18} /> Routes
+            </button>
+          </>
+        )}
+      </nav>
+
+      {/* FOOTER */}
+      <div className="px-4 py-4 border-t border-white/10 space-y-2">
+        <button className={linkClass("#")}>
+          <Settings size={18} /> Settings
+        </button>
+        <button className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-black font-semibold">
+          <LogOut size={18} /> Log out
+        </button>
+      </div>
     </aside>
   );
 };

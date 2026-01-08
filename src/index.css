@@ -4,7 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* GLOBAL BASE */
+/* =========================
+   GLOBAL
+========================= */
 html,
 body,
 #root {
@@ -16,23 +18,96 @@ body {
   margin: 0;
 }
 
-/* BUTTONS */
+/* =========================
+   TEXT
+========================= */
+.text-muted {
+  @apply text-text-muted;
+}
+
+header {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+
+/* =========================
+   BUTTONS
+========================= */
 .btn-primary {
-  @apply bg-primary text-white px-6 py-3 rounded-lg font-medium
-         hover:bg-primary-hover transition shadow-sm hover:shadow-md;
+  @apply bg-primary text-black px-6 py-3 rounded-xl font-semibold
+         transition shadow-glow;
+}
+
+.btn-primary:hover {
+  @apply bg-primary-hover;
 }
 
 .btn-secondary {
-  @apply bg-secondary text-white px-6 py-3 rounded-lg font-medium
-         hover:bg-secondary-hover transition shadow-sm hover:shadow-md;
+  @apply bg-surface text-text-main px-6 py-3 rounded-xl
+         transition;
+}
+
+.btn-secondary:hover {
+  @apply bg-surface-dark;
 }
 
 .btn-outline {
-  @apply border border-secondary text-secondary px-6 py-3 rounded-lg
-         hover:bg-secondary hover:text-white transition;
+  @apply border border-primary/40 text-primary px-6 py-3 rounded-xl
+         transition;
 }
 
-/* CARDS */
+.btn-outline:hover {
+  @apply bg-primary text-black;
+}
+
+/* =========================
+   CARDS
+========================= */
 .card {
-  @apply bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition;
+  @apply bg-gradient-to-br from-surface to-surface-dark
+         rounded-2xl p-6 border border-white/10
+         shadow-xl;
+}
+
+/* =========================
+   MAP
+========================= */
+.map-container {
+  @apply rounded-2xl overflow-hidden border border-white/10;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+aside {
+  @apply bg-gradient-to-b from-surface to-surface-dark
+         border-r border-white/10;
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+
+/* =========================
+   MOBILE
+========================= */
+@media (max-width: 768px) {
+  aside {
+    display: none;
+  }
+}
+
+/* AUTH INPUTS */
+.auth-input {
+  @apply w-full rounded-xl bg-black/30 border border-white/10
+         px-4 py-3 text-text-main placeholder-text-muted
+         focus:outline-none focus:ring-2 focus:ring-primary;
 }
