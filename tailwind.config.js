@@ -1,32 +1,32 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+
   theme: {
     extend: {
+      /* =========================
+         COLORS — GREEN ONLY
+      ========================= */
       colors: {
-        /* BRAND */
         primary: {
-          DEFAULT: "#22C55E", // Green (actions, money)
+          DEFAULT: "#22C55E", // main green
           hover: "#16A34A",
           light: "#4ADE80",
         },
 
-        secondary: {
-          DEFAULT: "#2563EB", // Blue (navigation, trust)
-          hover: "#1D4ED8",
-          light: "#DBEAFE",
-        },
-
         /* BACKGROUNDS */
-        background: "#ffffff",
-        surface: "#F8FAFC",
-        "surface-dark": "#0B0E11",
+        background: "#0B0F0E",
+        surface: "#111716",
+        "surface-dark": "#0D1211",
 
         /* TEXT */
         text: {
-          main: "#0F172A",
-          muted: "#64748B",
-          inverse: "#FFFFFF",
+          main: "#E5E7EB",
+          muted: "#9CA3AF",
+          inverse: "#000000",
         },
 
         /* STATUS */
@@ -34,13 +34,22 @@ export default {
         warning: "#F59E0B",
         danger: "#EF4444",
       },
+
+      /* =========================
+         TYPOGRAPHY
+      ========================= */
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
+
+      /* =========================
+         EFFECTS
+      ========================= */
       boxShadow: {
-        glow: "0 0 15px rgba(34, 197, 94, 0.4)",
+        glow: "0 0 20px rgba(34, 197, 94, 0.35)",
       },
     },
   },
+
   plugins: [],
 };
