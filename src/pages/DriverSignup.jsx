@@ -30,7 +30,16 @@ export default function DriverSignup() {
 
     setLoading(true);
     try {
-      await signup({ ...formData, role: "driver" });
+      // Combine names for backend
+      const payload = {
+        name: `${formData.firstName} ${formData.secondName}`.trim(),
+        email: formData.email,
+        password: formData.password,
+        licence: formData.licence,
+        plate: formData.plate,
+        role: "driver"
+      };
+      await signup(payload);
       navigate("/driver-dashboard");
     } catch (err) {
       setError("Failed to create account. Please try again.");

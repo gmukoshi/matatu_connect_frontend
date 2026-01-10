@@ -28,7 +28,14 @@ export default function CommuterSignup() {
 
     setLoading(true);
     try {
-      await signup({ ...formData, role: "commuter" });
+      // Combine names for backend
+      const payload = {
+        name: `${formData.firstname} ${formData.secondname}`.trim(),
+        email: formData.email,
+        password: formData.password,
+        role: "commuter"
+      };
+      await signup(payload);
       navigate("/commuter-dashboard");
     } catch (err) {
       setError("Failed to create account. Please try again.");

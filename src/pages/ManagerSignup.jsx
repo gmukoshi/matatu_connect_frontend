@@ -31,7 +31,14 @@ export default function ManagerSignup() {
 
     setLoading(true);
     try {
-      await signup({ ...formData, role: "manager" });
+      // Backend expects 'name', 'email', 'password', 'role'
+      const payload = {
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        password: formData.password,
+        role: "sacco_manager"
+      };
+      await signup(payload);
       navigate("/dashboard-overview");
     } catch (err) {
       setError("Failed to create account. Please try again.");
