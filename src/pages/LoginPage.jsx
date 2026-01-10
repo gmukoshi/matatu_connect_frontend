@@ -27,14 +27,19 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const user = await login({ username, password, role });
+      // Backend expects 'email', not 'username'.
+      // The state 'username' holds the input value which is used as email.
+      const user = await login({ email: username, password, role });
+
       // Redirect based on role
       if (user.role === "driver") navigate("/driver-dashboard");
       else if (user.role === "manager") navigate("/dashboard-overview");
       else navigate("/commuter-dashboard");
 
     } catch (err) {
-      setError("Invalid username or password");
+      console.error("Login error:", err);
+      const errorMessage = err.response?.data?.error || "Invalid username or password";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -79,8 +84,8 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setRole(r.id)}
                 className={`flex-1 text-xs font-medium py-2 rounded-lg transition-all ${role === r.id
-                    ? "bg-emerald-500 text-slate-900 shadow-md"
-                    : "text-slate-400 hover:text-slate-200"
+                  ? "bg-emerald-500 text-slate-900 shadow-md"
+                  : "text-slate-400 hover:text-slate-200"
                   }`}
               >
                 {r.label}
