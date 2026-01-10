@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Pages
 import Homepage from "./pages/Homepage.jsx";
@@ -10,16 +11,26 @@ import AdminLogin from "./pages/AdminLogin.jsx";
 import CommuterDashboard from "./pages/CommuterDashboard.jsx";
 import DriverDashboard from "./pages/DriverDashboard.jsx";
 import DashboardOverview from "./pages/SaccoManagementDashboard.jsx";
-import MpesaConfirmation from"./pages/MpesaConfirmation.jsx";
+import MpesaConfirmation from "./pages/MpesaConfirmation.jsx";
 import NotFound from "./pages/NotFound.jsx";
+import FleetPage from "./pages/FleetPage.jsx";
+import DriversPage from "./pages/DriversPage.jsx";
+import ManageRoutesPage from "./pages/ManageRoutesPage.jsx";
 // Layouts
 import MainLayout from "./components/layout/MainLayout.jsx";
 import PublicLayout from "./components/layout/PublicLayout.jsx";
 
-/* ===== DEV AUTH MOCK ===== */
-const isAuthenticated = true;
+function AppRoutes() {
+  const { isAuthenticated, loading } = useAuth();
 
-function App() {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-950 text-emerald-500">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-current"></div>
+      </div>
+    );
+  }
+
   return (
     <Routes>
       {/* ===== PUBLIC ROUTES (WITH NAVBAR) ===== */}
@@ -32,21 +43,13 @@ function App() {
         }
       />
       <Route
-        path="*"
-        element={
-          
-            <NotFound/>
-            
-            }
-         />
-      <Route
         path="/Mpesa-confirmation"
         element={
           <PublicLayout>
-            <Mpesa-confirmation/>
-            </PublicLayout>
-            }
-         />
+            <MpesaConfirmation />
+          </PublicLayout>
+        }
+      />
       <Route
         path="/login"
         element={
@@ -115,6 +118,14 @@ function App() {
         }
       />
 
+      import FleetPage from "./pages/FleetPage.jsx";
+      import DriversPage from "./pages/DriversPage.jsx";
+      import ManageRoutesPage from "./pages/ManageRoutesPage.jsx";
+
+      // ... existing imports ...
+
+      // ... (inside AppRoutes component) ...
+
       <Route
         path="/dashboard-overview"
         element={
@@ -128,9 +139,54 @@ function App() {
         }
       />
 
+      <Route
+        path="/manager/fleet"
+        element={
+          isAuthenticated ? (
+            <MainLayout role="manager">
+              <FleetPage />
+            </MainLayout>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/manager/drivers"
+        element={
+          isAuthenticated ? (
+            <MainLayout role="manager">
+              <DriversPage />
+            </MainLayout>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/manager/routes"
+        element={
+          isAuthenticated ? (
+            <MainLayout role="manager">
+              <ManageRoutesPage />
+            </MainLayout>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+
       {/* ===== FALLBACK ===== */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }
 

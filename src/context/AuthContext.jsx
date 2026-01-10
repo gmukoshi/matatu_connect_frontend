@@ -1,47 +1,76 @@
-import { createContext, useState, useEffect } from 'react';
-import { loginUser } from '../api/auth';
+import { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-    // Check if user is already logged in on page refresh
-    useEffect(() => {
-        const savedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('access_token');
-        if (savedUser && token) {
-            setUser(JSON.parse(savedUser));
+  // Load user from local storage on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem("mc_user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
+  }, []);
+
+  const login = async (credentials) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // Mock validation
+        if (credentials.username === "fail") {
+          reject(new Error("Invalid credentials"));
+          return;
         }
-        setLoading(false);
-    }, []);
 
-    const login = async (credentials) => {
-        try {
-            const data = await loginUser(credentials);
-            // Data expected: { access_token: "...", user: { id: 1, role: "driver", ... } }
-            localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            setUser(data.user);
-            return { success: true };
-        } catch (error) {
-            return {
-                success: false,
-                message: error.response?.data?.msg || 'Login failed',
-            };
-        }
-    };
+        const mockUser = {
+          id: "123",
+          username: credentials.username,
+          role: credentials.role || "commuter",
+          email: "user@example.com",
+        };
 
-    const logout = () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
-        setUser(null);
-    };
+        setUser(mockUser);
+        localStorage.setItem("mc_user", JSON.stringify(mockUser));
+        resolve(mockUser);
+      }, 1000); // Simulate network delay
+    });
+  };
 
-    return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
-            {!loading && children}
-        </AuthContext.Provider>
-    );
+  const signup = async (data) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const mockUser = {
+          id: Date.now().toString(),
+          ...data,
+          role: "commuter", // Force role, or pass it in data
+        };
+        setUser(mockUser);
+        localStorage.setItem("mc_user", JSON.stringify(mockUser));
+        resolve(mockUser);
+      }, 1000);
+    });
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("mc_user");
+    navigate("/login");
+  };
+
+  const value = {
+    user,
+    loading,
+    login,
+    signup,
+    logout,
+    isAuthenticated: !!user,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

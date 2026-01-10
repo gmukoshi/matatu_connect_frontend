@@ -23,6 +23,9 @@ export const AppProvider = ({ children }) => {
       status: "available",
       passengerCapacity: 14,
       driverId: 101,
+      driverName: "John Kamau",
+      driverImage: "https://i.pravatar.cc/150?img=11",
+      rating: 4.8,
       routeName: "Route 1",
       route: [
         { lat: -1.2921, lng: 36.8219 },
@@ -40,6 +43,9 @@ export const AppProvider = ({ children }) => {
       status: "busy",
       passengerCapacity: 12,
       driverId: 102,
+      driverName: "Peter Omondi",
+      driverImage: "https://i.pravatar.cc/150?img=3",
+      rating: 4.5,
       routeName: "Route 1",
       route: [
         { lat: -1.2922, lng: 36.822 },
@@ -57,6 +63,9 @@ export const AppProvider = ({ children }) => {
       status: "available",
       passengerCapacity: 16,
       driverId: 103,
+      driverName: "Samuel Njoroge",
+      driverImage: "https://i.pravatar.cc/150?img=59",
+      rating: 4.9,
       routeName: "Route 2",
       route: [
         { lat: -1.291, lng: 36.82 },
