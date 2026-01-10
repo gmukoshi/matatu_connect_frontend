@@ -69,23 +69,47 @@ const CommuterDashboard = () => {
           <button
             key={v.id}
             onClick={() => setSelectedVehicle(v)}
-            className={`p-5 rounded-2xl border transition text-left
-              ${
-                selectedVehicle?.id === v.id
-                  ? "border-primary bg-primary/10"
-                  : "border-white/10 bg-surface-dark hover:bg-white/5"
+            className={`p-4 rounded-2xl border transition text-left relative overflow-hidden group
+              ${selectedVehicle?.id === v.id
+                ? "border-primary bg-primary/10"
+                : "border-white/10 bg-surface-dark hover:bg-white/5"
               }
             `}
           >
-            <p className="font-semibold text-white">
-              {v.name}
-            </p>
-            <p className="text-sm text-text-muted">
-              {v.routeName || "Unknown route"}
-            </p>
-            <p className="text-xs mt-2 text-primary">
-              Tap to select
-            </p>
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="font-bold text-white text-lg">{v.name}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/5">
+                    {v.routeName || "Unknown route"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Driver Image */}
+              <div className="relative">
+                <img
+                  src={v.driverImage || `https://ui-avatars.com/api/?name=${v.driverName}&background=random`}
+                  alt={v.driverName}
+                  className="w-10 h-10 rounded-full border-2 border-surface object-cover shadow-sm"
+                />
+                <div className="absolute -bottom-1 -right-1 bg-surface-dark rounded-full px-1 py-0.5 border border-white/10 flex items-center gap-0.5">
+                  <svg className="w-2.5 h-2.5 text-yellow-500 fill-current" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  <span className="text-[10px] font-bold text-white">{v.rating || "4.5"}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-xs text-text-muted">
+                Driver: <span className="text-slate-300">{v.driverName || "Unknown"}</span>
+              </div>
+              <p className="text-xs font-semibold text-primary group-hover:underline">
+                Select Vehicle →
+              </p>
+            </div>
           </button>
         ))}
       </div>
