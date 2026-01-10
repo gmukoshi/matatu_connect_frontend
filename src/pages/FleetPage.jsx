@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Plus } from "lucide-react"; // Import icon
-import { fetchMatatus, addVehicle } from "../api/matatus"; // Create/Ensure fetchMatatus exists
+import { fetchMatatus, addVehicle, updateVehicle, deleteVehicle } from "../api/matatus";
 import { fetchRoutes } from "../api/routes";
 import { fetchDrivers } from "../api/users";
 import Modal from "../components/common/Modal";
@@ -11,6 +11,8 @@ export default function FleetPage() {
     const [availableDrivers, setAvailableDrivers] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedVehicle, setSelectedVehicle] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
 
     const [vehicleForm, setVehicleForm] = useState({
         plate_number: "",
@@ -27,19 +29,61 @@ export default function FleetPage() {
     const loadData = async () => {
         try {
             // vehicles
-            const resVehicles = await fetchMatatus(); // Ensure this API exists/works
-            setVehicles(resVehicles.data.data || []);
+            const resVehicles = await fetchMatatus();
+            console.log("Vehicles:", resVehicles);
+            const vehicleList = resVehicles.data?.data || resVehicles.data || [];
+            setVehicles(Array.isArray(vehicleList) ? vehicleList : []);
 
             // routes
             const resRoutes = await fetchRoutes();
-            setRoutes(resRoutes.data.data || []);
+            console.log("Routes:", resRoutes);
+            // routes endpoint returns { data: [...] } via success_response
+            const routeList = resRoutes.data?.data || resRoutes.data || [];
+            setRoutes(Array.isArray(routeList) ? routeList : []);
 
             // drivers
             const resDrivers = await fetchDrivers();
-            const driverData = Array.isArray(resDrivers.data) ? resDrivers.data : (resDrivers.data.data || []);
-            setAvailableDrivers(driverData);
+            console.log("Drivers:", resDrivers);
+            // drivers endpoint returns pure list [...]
+            const driverList = Array.isArray(resDrivers.data) ? resDrivers.data : (resDrivers.data?.data || []);
+            setAvailableDrivers(Array.isArray(driverList) ? driverList : []);
         } catch (err) {
             console.error("Error loading fleet data", err);
+        }
+    };
+
+    const handleUpdateVehicle = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const payload = {
+                capacity: selectedVehicle.capacity,
+                route_id: selectedVehicle.route_id ? parseInt(selectedVehicle.route_id) : null,
+                driver_id: selectedVehicle.driver_id ? parseInt(selectedVehicle.driver_id) : null,
+            };
+            await updateVehicle(selectedVehicle.id, payload);
+            alert("Vehicle Updated!");
+            setIsEditing(false);
+            setSelectedVehicle(null);
+            loadData();
+        } catch (err) {
+            console.error("Update failed", err);
+            alert("Update failed: " + (err.response?.data?.error || err.message));
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteVehicle = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this vehicle?")) return;
+        try {
+            await deleteVehicle(id);
+            alert("Vehicle Deleted");
+            setSelectedVehicle(null);
+            loadData();
+        } catch (err) {
+            console.error("Delete failed", err);
+            alert("Delete failed");
         }
     };
 
@@ -90,6 +134,7 @@ export default function FleetPage() {
                             <th className="py-4">Number Plate</th>
                             <th className="py-4">Capacity</th>
                             <th className="py-4">Route</th>
+                            <th className="py-4">Driver</th>
                             <th className="py-4">Status</th>
                             <th className="py-4 text-right">Actions</th>
                         </tr>
@@ -101,6 +146,12 @@ export default function FleetPage() {
                                 <td className="py-4">{vehicle.capacity}</td>
                                 <td className="py-4">{vehicle.route ? (vehicle.route.name || `${vehicle.route.origin}-${vehicle.route.destination}`) : "Unassigned"}</td>
                                 <td className="py-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-white text-sm">{vehicle.driver || "Unassigned"}</span>
+                                        {vehicle.driver_id && <span className="text-xs text-text-muted">ID: {vehicle.driver_id}</span>}
+                                    </div>
+                                </td>
+                                <td className="py-4">
                                     <span className={`px-2 py-1 rounded-full text-xs font-bold ${vehicle.assignment_status === "active"
                                         ? "bg-emerald-500/10 text-emerald-400"
                                         : "bg-yellow-500/10 text-yellow-500"
@@ -109,13 +160,81 @@ export default function FleetPage() {
                                     </span>
                                 </td>
                                 <td className="py-4 text-right">
-                                    <button className="text-primary hover:text-emerald-300 text-xs font-semibold">View Details</button>
+                                    <button
+                                        onClick={() => setSelectedVehicle(vehicle)}
+                                        className="text-primary hover:text-emerald-300 text-xs font-semibold"
+                                    >
+                                        View Details
+                                    </button>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
+
+            {/* VIEW DETAILS MODAL */}
+            {selectedVehicle && (
+                <Modal title={`Vehicle Details: ${selectedVehicle.plate_number}`} onClose={() => setSelectedVehicle(null)}>
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                            <div>
+                                <p className="text-sm text-text-muted">Status</p>
+                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${selectedVehicle.assignment_status === "active"
+                                    ? "bg-emerald-500/10 text-emerald-400"
+                                    : "bg-yellow-500/10 text-yellow-500"
+                                    }`}>
+                                    {selectedVehicle.assignment_status || "Active"}
+                                </span>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm text-text-muted">Capacity</p>
+                                <p className="text-xl font-bold text-white">{selectedVehicle.capacity} Seats</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="text-sm font-bold text-white mb-2 uppercase tracking-wider">Assignment Info</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-3 bg-surface-dark rounded-lg">
+                                        <p className="text-xs text-text-muted">Driver</p>
+                                        <p className="text-white font-medium">{selectedVehicle.driver || "Unassigned"}</p>
+                                        {selectedVehicle.driver_id && <p className="text-[10px] text-text-muted">ID: {selectedVehicle.driver_id}</p>}
+                                    </div>
+                                    <div className="p-3 bg-surface-dark rounded-lg">
+                                        <p className="text-xs text-text-muted">Route</p>
+                                        <p className="text-white font-medium">{selectedVehicle.route ? (selectedVehicle.route.name || `${selectedVehicle.route.origin}-${selectedVehicle.route.destination}`) : "Unassigned"}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 className="text-sm font-bold text-white mb-2 uppercase tracking-wider">Performance (Mock)</h4>
+                                <div className="p-3 bg-surface-dark rounded-lg flex justify-between items-center">
+                                    <div>
+                                        <p className="text-xs text-text-muted">Daily Revenue</p>
+                                        <p className="text-white font-bold">KES 12,500</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-text-muted">Fuel Efficiency</p>
+                                        <p className="text-white font-bold">8.2 km/L</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors border border-white/10">
+                                Edit
+                            </button>
+                            <button className="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors border border-red-500/20">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
 
             {/* ADD VEHICLE MODAL */}
             {showModal && (
@@ -125,10 +244,11 @@ export default function FleetPage() {
                             <label className="mc-label">Plate Number</label>
                             <input
                                 className="mc-input uppercase"
-                                placeholder="KAA 123B"
+                                placeholder="KDA 123Z"
                                 value={vehicleForm.plate_number}
                                 onChange={e => setVehicleForm({ ...vehicleForm, plate_number: e.target.value.toUpperCase() })}
                             />
+                            <p className="text-xs text-text-muted mt-1">Format: KAA 123B (Standard Kenyan Plate)</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
