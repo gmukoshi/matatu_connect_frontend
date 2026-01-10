@@ -5,7 +5,7 @@ import matatuIcon from "../assets/Matatu_icon.png";
 import googleIcon from "../assets/google_icon.png";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
@@ -32,9 +32,30 @@ export default function LoginPage() {
       const user = await login({ email: username, password, role });
 
       // Redirect based on role
-      if (user.role === "driver") navigate("/driver-dashboard");
-      else if (user.role === "manager") navigate("/dashboard-overview");
-      else navigate("/commuter-dashboard");
+      console.log("Logged in user role:", user.role); // Debugging log
+
+      // VALIDATE SELECTED ROLE VS ACTUAL ROLE
+      let isRoleValid = false;
+      if (role === "driver" && user.role === "driver") isRoleValid = true;
+      else if (role === "manager" && (user.role === "sacco_manager" || user.role === "manager")) isRoleValid = true;
+      else if (role === "commuter" && user.role === "commuter") isRoleValid = true;
+
+      if (!isRoleValid) {
+        // Enforce restriction
+        const formattedRole = role.charAt(0).toUpperCase() + role.slice(1);
+        setError(`Access Denied: You are not registered as a ${formattedRole}.`);
+        logout(); // Clear session immediately
+        return;
+      }
+
+      if (user.role === "driver") {
+        navigate("/driver-dashboard");
+      } else if (user.role === "sacco_manager" || user.role === "manager") {
+        // Handle both cases just to be safe, but backend standard is 'sacco_manager'
+        navigate("/dashboard-overview");
+      } else {
+        navigate("/commuter-dashboard");
+      }
 
     } catch (err) {
       console.error("Login error:", err);
@@ -97,13 +118,42 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="mc-label">Email or Username</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="mc-input"
-                placeholder="name@example.com"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="loginIdentifier"
+                  id="loginIdentifier"
+                  autoComplete="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="mc-input pr-10"
+                  placeholder="name@example.com"
+                />
+                {username && (
+                  <button
+                    type="button"
+                    onClick={() => setUsername("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition"
+                    title="Clear"
+                  >
+                    {/* X Icon SVG */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div>
@@ -116,13 +166,38 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mc-input"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mc-input pr-10"
+                  placeholder="••••••••"
+                />
+                {password && (
+                  <button
+                    type="button"
+                    onClick={() => setPassword("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition"
+                    title="Clear"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
 
             {error && (

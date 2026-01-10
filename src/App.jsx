@@ -118,13 +118,7 @@ function AppRoutes() {
         }
       />
 
-      import FleetPage from "./pages/FleetPage.jsx";
-      import DriversPage from "./pages/DriversPage.jsx";
-      import ManageRoutesPage from "./pages/ManageRoutesPage.jsx";
 
-      // ... existing imports ...
-
-      // ... (inside AppRoutes component) ...
 
       <Route
         path="/dashboard-overview"

@@ -1,10 +1,13 @@
 import React, { useState, useMemo } from "react";
 import LiveMap from "../components/map/LiveMap";
+import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
 import SeatSelector from "../components/seats/SeatSelector";
+import { LogOut } from "lucide-react";
 
 const CommuterDashboard = () => {
   const { vehicles, bookingRequests } = useApp();
+  const { user, logout } = useAuth(); // Get user and logout function
   const [routeFilter, setRouteFilter] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState(null);
 
@@ -19,13 +22,23 @@ const CommuterDashboard = () => {
   return (
     <>
       {/* HEADER */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">
-          Good Afternoon 👋
-        </h1>
-        <p className="text-text-muted mt-1">
-          Track matatus and book rides in real-time
-        </p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-white">
+            Good Afternoon, {user?.name?.split(" ")[0] || "Commuter"} 👋
+          </h1>
+          <p className="text-text-muted mt-1">
+            Track matatus and book rides in real-time
+          </p>
+        </div>
+
+        <button
+          onClick={logout}
+          className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors text-sm font-medium border border-red-500/20"
+        >
+          <LogOut size={16} />
+          Logout
+        </button>
       </div>
 
       {/* STATS + FILTER */}

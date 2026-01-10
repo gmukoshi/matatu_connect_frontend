@@ -1,22 +1,123 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import LiveMap from "../components/map/LiveMap";
+import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
-import { Clock, MapPin, Navigation, Phone, Search, Users, Wallet } from "lucide-react";
+import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle } from "lucide-react";
+import { acceptVehicle, rejectVehicle, fetchMatatus } from "../api/matatus";
+import { fetchBookings } from "../api/bookings";
 
 const DriverDashboard = () => {
-  const { vehicles } = useApp();
+  const { vehicles, setVehicles } = useApp();
+  const { user, logout } = useAuth();
   const [online, setOnline] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [bookings, setBookings] = useState([]);
 
-  // Mock data to match screenshot
-  const driverId = 101;
-  const myVehicle = vehicles.find((v) => v.driverId === driverId) || vehicles[0];
+  // Find vehicle assigned to this driver
+  const myVehicle = useMemo(() => {
+    if (!user || !vehicles) return null;
+    return vehicles.find((v) => v.driverId === user.id);
+  }, [vehicles, user]);
 
-  const upcomingPickups = [
-    { id: 1, name: "Mercy Wanjiku", location: "Westlands Stage", time: "2 min away", type: "next", avatar: "https://i.pravatar.cc/150?img=5" },
-    { id: 2, name: "Brian Kamau", location: "Sarit Center Main Gate", time: "5 min", type: "upcoming", avatar: "https://i.pravatar.cc/150?img=11" },
-    { id: 3, name: "Sarah Njoroge", location: "ABC Place", time: "12 min", type: "upcoming", avatar: "https://i.pravatar.cc/150?img=9" },
-    { id: 4, name: "David Ochieng", location: "Kangemi Flyover", time: "18 min", type: "upcoming", avatar: "https://i.pravatar.cc/150?img=3" },
-  ];
+  useEffect(() => {
+    if (myVehicle && myVehicle.assignment_status === 'active') {
+      loadBookings();
+    }
+  }, [myVehicle]);
+
+  const loadBookings = async () => {
+    try {
+      const res = await fetchBookings();
+      // Ensure we get an array. The backend returns { data: [...], message: "..." }
+      const data = res.data.data || [];
+      setBookings(data);
+    } catch (err) {
+      console.error("Failed to load bookings", err);
+    }
+  };
+
+  const handleAccept = async () => {
+    if (!myVehicle) return;
+    setIsProcessing(true);
+    try {
+      await acceptVehicle(myVehicle.id);
+      alert("Assignment Accepted! You are now active.");
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to accept");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!myVehicle) return;
+    if (!window.confirm("Are you sure you want to reject this assignment?")) return;
+    setIsProcessing(true);
+    try {
+      await rejectVehicle(myVehicle.id);
+      alert("Assignment Rejected.");
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to reject");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // PENDING ASSIGNMENT MODAL
+  if (myVehicle && myVehicle.assignment_status === "pending") {
+    // ... (Modal Content - Unchanged)
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-6">
+        <div className="mc-card w-full max-w-lg p-8 text-center animate-in zoom-in duration-300">
+          <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Users className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">New Vehicle Assignment</h2>
+          <p className="text-text-muted mb-6">
+            You have been assigned to drive <strong className="text-white">{myVehicle.plate_number}</strong>.
+            <br />
+            Capacity: {myVehicle.capacity} Passengers.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={handleReject}
+              disabled={isProcessing}
+              className="py-3 px-4 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 font-bold flex items-center justify-center gap-2"
+            >
+              <XCircle className="w-5 h-5" /> Reject
+            </button>
+            <button
+              onClick={handleAccept}
+              disabled={isProcessing}
+              className="py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+            >
+              <CheckCircle className="w-5 h-5" /> Accept Assignment
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Transform bookings to UI format
+  const upcomingPickups = bookings.map((b, idx) => ({
+    id: b.id,
+    name: b.user_name || "Passenger",
+    location: "Boarding Point", // Could get from route origin
+    time: "Ready",
+    type: idx === 0 ? "next" : "upcoming",
+    avatar: `https://i.pravatar.cc/150?img=${(b.id % 70) + 1}`
+  }));
+
+  // Fallback if no bookings
+  if (upcomingPickups.length === 0 && myVehicle) {
+    upcomingPickups.push({ id: 999, name: "No passengers yet", location: "Waiting for bookings", time: "--", type: "upcoming", avatar: "https://i.pravatar.cc/150?img=0" });
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -24,26 +125,44 @@ const DriverDashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-            Habari, John! <span className="text-2xl">👋</span>
+            Habari, {user?.name?.split(" ")[0] || "Driver"}! <span className="text-2xl">👋</span>
           </h1>
-          <p className="text-text-muted mt-1">Ready for the afternoon rush?</p>
+          <p className="text-text-muted mt-1">
+            {myVehicle ? (
+              <span className="flex items-center gap-2">
+                Vehicle: <span className="text-white font-mono bg-white/10 px-2 rounded">{myVehicle.plate_number}</span>
+                <span className="text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase font-bold">Active</span>
+              </span>
+            ) : "No vehicle assigned currently."}
+          </p>
         </div>
 
-        <div className={`
-          flex items-center gap-3 px-4 py-2 rounded-full border transition-all cursor-pointer
-          ${online ? "bg-emerald-500/10 border-emerald-500/50" : "bg-surface border-white/10"}
-        `} onClick={() => setOnline(!online)}>
-          <div className={`w-10 h-6 rounded-full relative transition-colors ${online ? "bg-emerald-500" : "bg-slate-600"}`}>
-            <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${online ? "translate-x-4" : ""}`} />
+        <div className="flex items-center gap-4">
+          {/* Online Toggle */}
+          <div className={`
+            flex items-center gap-3 px-4 py-2 rounded-full border transition-all cursor-pointer
+            ${online ? "bg-emerald-500/10 border-emerald-500/50" : "bg-surface border-white/10"}
+          `} onClick={() => setOnline(!online)}>
+            <div className={`w-10 h-6 rounded-full relative transition-colors ${online ? "bg-emerald-500" : "bg-slate-600"}`}>
+              <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${online ? "translate-x-4" : ""}`} />
+            </div>
+            <div className="text-sm">
+              <p className={`font-bold ${online ? "text-emerald-400" : "text-slate-400"}`}>
+                {online ? "You are Online" : "You are Offline"}
+              </p>
+              <p className="text-[10px] text-text-muted">
+                {online ? "Searching for trips..." : "Not visible to passengers"}
+              </p>
+            </div>
           </div>
-          <div className="text-sm">
-            <p className={`font-bold ${online ? "text-emerald-400" : "text-slate-400"}`}>
-              {online ? "You are Online" : "You are Offline"}
-            </p>
-            <p className="text-[10px] text-text-muted">
-              {online ? "Searching for trips..." : "Not visible to passengers"}
-            </p>
-          </div>
+
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors text-sm font-medium border border-red-500/20"
+          >
+            <LogOut size={16} />
+            Logout
+          </button>
         </div>
       </div>
 
@@ -79,8 +198,8 @@ const DriverDashboard = () => {
           <StatCard
             icon={<Navigation className="w-5 h-5 text-emerald-400" />}
             label="Trips Today"
-            value="14"
-            subtext="2 more to goal"
+            value={bookings.length.toString()}
+            subtext="Total Passengers"
           />
         </div>
       </div>
@@ -98,8 +217,8 @@ const DriverDashboard = () => {
           <div className="space-y-1">
             {upcomingPickups.map((pickup, idx) => (
               <div key={pickup.id} className={`p-4 rounded-2xl transition-all ${pickup.type === "next"
-                  ? "bg-emerald-500/10 border border-emerald-500/20 mb-4"
-                  : "hover:bg-white/5 border border-transparent"
+                ? "bg-emerald-500/10 border border-emerald-500/20 mb-4"
+                : "hover:bg-white/5 border border-transparent"
                 }`}>
                 {pickup.type === "next" && (
                   <div className="flex justify-between items-center mb-3 text-[10px] font-bold uppercase tracking-wider">
@@ -144,7 +263,13 @@ const DriverDashboard = () => {
 
           <div className="flex-1 relative rounded-2xl overflow-hidden min-h-[300px]">
             {/* Map Component */}
-            <LiveMap vehicles={[myVehicle]} centerVehicle={myVehicle} />
+            {myVehicle ? (
+              <LiveMap vehicles={[myVehicle]} centerVehicle={myVehicle} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-text-muted">
+                <p>No active vehicle assigned to track.</p>
+              </div>
+            )}
 
             {/* Traffic Overlay */}
             <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md rounded-xl p-3 border border-white/10 flex items-start gap-3">

@@ -1,28 +1,38 @@
 import React, { useState } from "react";
 import LiveMap from "../components/map/LiveMap";
+import { useAuth } from "../context/AuthContext";
 import {
-  Bell,
-  ChevronDown,
-  Filter,
-  Fuel,
-  LayoutDashboard,
-  MessageSquare,
+  LogOut,
   MoreHorizontal,
-  Plus,
-  Search,
   TrendingUp,
   TrendingDown,
-  Users,
-  Bus
 } from "lucide-react";
 
+import { fetchRoutes } from "../api/routes";
+import { fetchDrivers } from "../api/users";
+import RevenueChart from "../components/charts/RevenueChart";
+
 export default function SaccoManagementDashboard() {
-  // Mock Data
-  const drivers = [
-    { id: "DR-4401", name: "John Kamau", plate: "KBC 455T", route: "Route 44 (Thika Rd)", status: "Active", avatar: "https://i.pravatar.cc/150?img=11" },
-    { id: "DR-2105", name: "Sarah Omondi", plate: "KDA 892L", route: "Route 11 (South B)", status: "Idle", avatar: "https://i.pravatar.cc/150?img=5" },
-    { id: "DR-3302", name: "David K.", plate: "KAZ 771M", route: "Route 23 (Westlands)", status: "Active", avatar: "https://i.pravatar.cc/150?img=3" },
-  ];
+  const { user, logout } = useAuth();
+
+  // Data States
+  const [availableDrivers, setAvailableDrivers] = useState([]);
+
+  // Fetch Data
+  const loadData = async () => {
+    try {
+      // Fetch Drivers for quick view
+      const resDrivers = await fetchDrivers();
+      const driverData = Array.isArray(resDrivers.data) ? resDrivers.data : (resDrivers.data.data || []);
+      setAvailableDrivers(driverData);
+    } catch (err) {
+      console.error("Failed to load dashboard data", err);
+    }
+  };
+
+  React.useEffect(() => {
+    loadData();
+  }, []);
 
   // Mock vehicles for map
   const mockVehicles = [
@@ -31,122 +41,71 @@ export default function SaccoManagementDashboard() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-
+    <div className="max-w-7xl mx-auto space-y-8 relative">
       {/* TOP HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-2xl font-bold text-white">Dashboard Overview</h1>
 
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          {/* Search */}
-          <div className="relative flex-1 md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search vehicle, driver, or route..."
-              className="w-full bg-surface-dark border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary/50"
-            />
-          </div>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Action buttons moved to Sidebar/Dedicated pages */}
 
-          {/* Actions */}
-          <div className="flex items-center gap-3">
-            <button className="p-2.5 bg-surface-dark border border-white/10 rounded-lg text-white hover:bg-white/5 relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-surface-dark"></span>
-            </button>
-            <button className="p-2.5 bg-surface-dark border border-white/10 rounded-lg text-white hover:bg-white/5">
-              <MessageSquare className="w-5 h-5" />
-            </button>
-            <button className="mc-btn-primary flex items-center gap-2 px-4 py-2.5">
-              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New Vehicle</span>
-            </button>
-          </div>
+          <button onClick={logout} className="p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 hover:bg-red-500/20">
+            <LogOut className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
       {/* STATS GRID */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Total Revenue"
-          value="KES 4.2M"
-          subtext="Vs. KES 3.75M last month"
-          trend="+12%"
-          trendUp={true}
-        />
-        <StatCard
-          label="Active Fleet"
-          value="45/50"
-          subtext="5 vehicles in maintenance"
-          trend="+2%"
-          trendUp={true}
-        />
-        <StatCard
-          label="Daily Passengers"
-          value="12.4K"
-          subtext="Due to heavy rains"
-          trend="-5%"
-          trendUp={false}
-        />
-        <StatCard
-          label="Fuel Efficiency"
-          value="8.5 km/L"
-          subtext="Fleet average"
-          badge="Stable"
-        />
+        <StatCard label="Total Revenue" value="KES 4.2M" subtext="Vs. KES 3.75M last month" trend="+12%" trendUp={true} />
+        <StatCard label="Active Fleet" value="45/50" subtext="5 vehicles in maintenance" trend="+2%" trendUp={true} />
+        <StatCard label="Daily Passengers" value="12.4K" subtext="Due to heavy rains" trend="-5%" trendUp={false} />
+        <StatCard label="Fuel Efficiency" value="8.5 km/L" subtext="Fleet average" badge="Stable" />
       </div>
 
-      {/* MIDDLE SECTION (Chart + Map) */}
-      <div className="grid lg:grid-cols-3 gap-6 h-[400px]">
-
-        {/* REVENUE CHART */}
-        <div className="lg:col-span-2 mc-card p-6 flex flex-col">
-          <div className="flex justify-between items-start mb-6">
+      {/* CHARTS SECTION */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="mc-card p-6">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="text-lg font-bold text-white">Revenue this Month</h3>
-              <p className="text-sm text-text-muted">Comparison with previous period</p>
+              <h3 className="text-lg font-bold text-white">Revenue Overview</h3>
+              <p className="text-text-muted text-sm">Last 7 Days vs Previous Week</p>
             </div>
-            <button className="text-text-muted hover:text-white"><MoreHorizontal /></button>
-          </div>
-
-          {/* Custom SVG Chart */}
-          <div className="flex-1 w-full relative">
-            <svg className="w-full h-full" viewBox="0 0 800 300" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-
-              {/* Grid Lines */}
-              <line x1="0" y1="225" x2="800" y2="225" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-              <line x1="0" y1="150" x2="800" y2="150" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-              <line x1="0" y1="75" x2="800" y2="75" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-
-              {/* The Curve */}
-              <path
-                d="M0,250 C50,200 100,100 150,150 C200,200 250,250 300,200 C350,150 400,100 450,150 C500,200 550,280 600,250 C650,220 700,50 750,150 L750,300 L0,300 Z"
-                fill="url(#chartGradient)"
-              />
-              <path
-                d="M0,250 C50,200 100,100 150,150 C200,200 250,250 300,200 C350,150 400,100 450,150 C500,200 550,280 600,250 C650,220 700,50 750,150"
-                fill="none"
-                stroke="#10b981"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-
-              {/* Data Point */}
-              <circle cx="450" cy="150" r="6" fill="#10b981" stroke="white" strokeWidth="2" />
-            </svg>
-
-            {/* X-Axis Labels */}
-            <div className="flex justify-between text-xs text-text-muted mt-2 px-2 uppercase tracking-wide">
-              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full text-xs font-bold">
+              <TrendingUp className="w-4 h-4" />
+              +12.5%
             </div>
           </div>
+          <RevenueChart />
         </div>
 
+        <div className="mc-card p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-white">Drivers</h3>
+            <button className="text-emerald-400 text-sm hover:underline">View All</button>
+          </div>
+          <div className="space-y-4">
+            {availableDrivers.slice(0, 4).map((driver) => (
+              <div key={driver.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-surface border border-white/10 flex items-center justify-center text-white font-bold">
+                    {driver.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-sm">{driver.name}</p>
+                    <p className="text-xs text-text-muted">{driver.email}</p>
+                  </div>
+                </div>
+                <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-lg">Active</span>
+              </div>
+            ))}
+            {availableDrivers.length === 0 && <p className="text-text-muted text-sm text-center py-4">No drivers registered yet.</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* MIDDLE SECTION (Map) */}
+      <div className="grid lg:grid-cols-1 gap-6 h-[400px]">
         {/* MINI MAP */}
         <div className="mc-card p-0 overflow-hidden relative flex flex-col">
           <div className="absolute top-4 left-4 z-10 flex justify-between w-[calc(100%-32px)] items-center">
@@ -159,74 +118,6 @@ export default function SaccoManagementDashboard() {
         </div>
       </div>
 
-      {/* DRIVERS TABLE */}
-      <div className="mc-card overflow-hidden">
-        <div className="p-6 border-b border-white/10 flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-bold text-white">Active Drivers</h3>
-            <p className="text-sm text-text-muted">Real-time status of on-duty personnel</p>
-          </div>
-          <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 text-xs font-medium text-white hover:bg-white/5">
-              <Filter className="w-3.5 h-3.5" /> Filter
-            </button>
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 text-xs font-medium text-white hover:bg-white/5">
-              <TrendingDown className="w-3.5 h-3.5" /> Export
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-surface-dark/50 text-xs uppercase text-text-muted font-semibold tracking-wider">
-              <tr>
-                <th className="px-6 py-4">Driver Name</th>
-                <th className="px-6 py-4">Vehicle Plate</th>
-                <th className="px-6 py-4">Current Route</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {drivers.map(driver => (
-                <tr key={driver.id} className="hover:bg-white/5 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <img src={driver.avatar} className="w-9 h-9 rounded-full object-cover border border-white/10" alt={driver.name} />
-                      <div>
-                        <p className="font-semibold text-white">{driver.name}</p>
-                        <p className="text-[10px] text-text-muted">ID: {driver.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-white font-mono bg-white/5 rounded mx-2 w-fit inline-block my-3 px-2 py-1 text-xs">
-                    {driver.plate}
-                  </td>
-                  <td className="px-6 py-4 text-text-muted">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-3 h-3 rotate-90" /> {driver.route}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${driver.status === 'Active'
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                        : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-                      }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${driver.status === 'Active' ? 'bg-emerald-400' : 'bg-amber-500'}`}></span>
-                      {driver.status}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-text-muted hover:text-white p-1 rounded hover:bg-white/10">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }

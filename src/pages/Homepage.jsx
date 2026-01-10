@@ -1,4 +1,7 @@
 import matatuIcon from "../assets/Matatu_icon.png";
+import LiveMap from "../components/map/LiveMap";
+import { useNavigate } from "react-router-dom";
+import { ShieldCheck, MapPin, Wallet } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -14,46 +17,69 @@ export default function LandingPage() {
 /* ---------------- HERO ---------------- */
 
 function Hero() {
+  const navigate = useNavigate();
+
+  // Mock vehicles for the landing page map visual
+  const heroVehicles = [
+    { id: 1, lat: -1.2921, lng: 36.8219, name: "KBZ 123A", status: "Moving" },
+    { id: 2, lat: -1.2841, lng: 36.8155, name: "KCA 456B", status: "Stopped" },
+    { id: 3, lat: -1.3000, lng: 36.7800, name: "KDB 789C", status: "Moving" },
+  ];
+
   return (
     <section
       id="home"
       className="max-w-7xl mx-auto px-6 py-32 grid md:grid-cols-2 gap-12 items-center"
     >
       <div>
-        <p className="text-emerald-400 font-semibold mb-4 uppercase tracking-wide">
-          Live tracking
+        <p className="text-emerald-400 font-semibold mb-4 uppercase tracking-wide flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Live tracking active
         </p>
 
-        <h1 className="text-6xl font-extrabold leading-tight mb-6 text-white">
+        <h1 className="text-6xl font-extrabold leading-tight mb-6 text-white text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
           Track & Book <br /> Matatus in Real-Time
         </h1>
 
-        <p className="text-gray-400 text-lg mb-10">
-          Navigate the city with confidence. Cashless payments, live route
-          updates, and safer rides right from your pocket.
+        <p className="text-gray-400 text-lg mb-10 leading-relaxed">
+          Navigate Nairobi with confidence. Cashless payments, live route
+          updates, and safer rides right from your pocket. Join thousands of daily commuters.
         </p>
 
         <div className="flex items-center gap-8">
-          <button className="btn-primary">
+          <button
+            onClick={() => navigate('/login')}
+            className="mc-btn-primary px-8 py-4 text-lg shadow-emerald-900/40 hover:shadow-emerald-900/60 hover:scale-105 transition-all duration-300"
+          >
             Get Started
           </button>
 
           <div className="flex items-center gap-2 text-sm text-gray-400">
-            <span className="w-2 h-2 bg-emerald-400 rounded-full" />
-            <span className="w-2 h-2 bg-emerald-400 rounded-full" />
-            <span className="w-2 h-2 bg-emerald-400 rounded-full" />
-            <span>Easy onboarding</span>
+            <div className="flex -space-x-2">
+              <div className="w-8 h-8 rounded-full bg-slate-700 border-2 border-[#0b0f0e]" />
+              <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-[#0b0f0e]" />
+              <div className="w-8 h-8 rounded-full bg-slate-500 border-2 border-[#0b0f0e]" />
+            </div>
+            <span className="ml-2">10k+ Commuters</span>
           </div>
         </div>
       </div>
 
-      <div className="bg-[#0f1514] rounded-3xl h-80 flex flex-col items-center justify-center border border-white/10 text-gray-400">
-        <span className="text-sm uppercase tracking-wide mb-2">
-          Live Map Preview
-        </span>
-        <span className="text-xs">
-          Real-time matatu tracking
-        </span>
+      <div className="relative h-[500px] w-full bg-slate-900/50 rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-emerald-900/10 group">
+        <div className="absolute inset-0 z-0 opacity-80 group-hover:opacity-100 transition-opacity duration-700">
+          <LiveMap vehicles={heroVehicles} centerVehicle={heroVehicles[0]} />
+        </div>
+
+        {/* Floating badge */}
+        <div className="absolute bottom-6 left-6 z-10 bg-black/60 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <MapPin size={20} />
+          </div>
+          <div>
+            <p className="text-xs text-emerald-400 font-bold uppercase">Live System</p>
+            <p className="text-white font-bold text-sm">345 Active Matatus</p>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -63,36 +89,54 @@ function Hero() {
 
 function Features() {
   return (
-    <section id="features" className="bg-[#0f1514] py-32">
-      <div className="max-w-7xl mx-auto px-6">
-        <h2 className="text-4xl font-bold mb-4 text-white">
-          Why Choose Matatu Connect?
+    <section id="features" className="bg-[#0f1514] py-32 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <span className="text-emerald-400 font-bold tracking-wider uppercase text-sm mb-2 block">Why Choose Matatu Connect?</span>
+        <h2 className="text-4xl font-bold mb-6 text-white">
+          The Smark Way to Commute
         </h2>
 
         <p className="text-gray-400 mb-16 max-w-2xl text-lg">
           Experience the future of public transport in Kenya with features
-          designed for safety and convenience.
+          designed for safety, transparency, and convenience.
         </p>
 
-        <div className="grid md:grid-cols-3 gap-10">
-          <FeatureCard title="Live Tracking" />
-          <FeatureCard title="M-Pesa Integrated" />
-          <FeatureCard title="Safe Rides" />
+        <div className="grid md:grid-cols-3 gap-8">
+          <FeatureCard
+            icon={<MapPin size={32} className="text-emerald-400" />}
+            title="Live Tracking"
+            desc="See exactly where your ride is. No more guessing when the next matatu will arrive."
+          />
+          <FeatureCard
+            icon={<Wallet size={32} className="text-blue-400" />}
+            title="M-Pesa Integrated"
+            desc="Pay securely directly from your phone. Cashless, receipted, and hassle-free."
+          />
+          <FeatureCard
+            icon={<ShieldCheck size={32} className="text-purple-400" />}
+            title="Safe Rides"
+            desc="Verified drivers and real-time monitoring ensure you reach your destination safely."
+          />
         </div>
       </div>
     </section>
   );
 }
 
-function FeatureCard({ title }) {
+function FeatureCard({ icon, title, desc }) {
   return (
-    <div className="card">
-      <div className="w-12 h-12 bg-emerald-500/20 rounded-xl mb-6" />
-      <h3 className="text-xl font-semibold mb-3 text-white">
+    <div className="mc-card p-8 group hover:-translate-y-2 transition-transform duration-300">
+      <div className="w-16 h-16 bg-white/5 rounded-2xl mb-6 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+        {icon}
+      </div>
+      <h3 className="text-xl font-bold mb-3 text-white">
         {title}
       </h3>
-      <p className="text-gray-400">
-        Built for speed, safety and reliability.
+      <p className="text-gray-400 leading-relaxed">
+        {desc}
       </p>
     </div>
   );
@@ -101,19 +145,27 @@ function FeatureCard({ title }) {
 /* ---------------- CTA ---------------- */
 
 function CtaSection() {
+  const navigate = useNavigate();
   return (
-    <section className="bg-gradient-to-br from-emerald-500 to-emerald-600 py-28 text-center text-black">
-      <h2 className="text-4xl font-bold mb-4">
-        Ready to upgrade your commute?
-      </h2>
+    <section className="bg-gradient-to-br from-emerald-500 to-emerald-700 py-32 text-center text-white relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10"></div>
 
-      <p className="opacity-80 mb-10 max-w-xl mx-auto text-lg">
-        Smarter, safer, cashless matatu rides.
-      </p>
+      <div className="relative z-10 max-w-3xl mx-auto px-6">
+        <h2 className="text-5xl font-bold mb-6 tracking-tight">
+          Ready to upgrade your commute?
+        </h2>
 
-      <button className="bg-black text-white px-10 py-4 rounded-lg font-medium hover:bg-black/80 transition shadow-lg">
-        Get started
-      </button>
+        <p className="opacity-90 mb-10 text-xl font-medium">
+          Join the thousands of Kenyans moving smarter, safer, and cashless today.
+        </p>
+
+        <button
+          onClick={() => navigate('/login')}
+          className="bg-white text-emerald-900 px-12 py-5 rounded-xl font-bold text-lg hover:bg-gray-100 transition shadow-xl hover:shadow-2xl hover:scale-105 duration-300"
+        >
+          Get started now
+        </button>
+      </div>
     </section>
   );
 }
@@ -130,11 +182,11 @@ function Footer() {
         </div>
 
         <div className="flex gap-6 flex-wrap">
-          <a href="#home" className="hover:text-white">Home</a>
-          <a href="#features" className="hover:text-white">Features</a>
-          <a href="#privacy" className="hover:text-white">Privacy</a>
-          <a href="#terms" className="hover:text-white">Terms</a>
-          <a href="#contact" className="hover:text-white">Contact</a>
+          <a href="#home" className="hover:text-emerald-400 transition-colors">Home</a>
+          <a href="#features" className="hover:text-emerald-400 transition-colors">Features</a>
+          <a href="#privacy" className="hover:text-emerald-400 transition-colors">Privacy</a>
+          <a href="#terms" className="hover:text-emerald-400 transition-colors">Terms</a>
+          <a href="#contact" className="hover:text-emerald-400 transition-colors">Contact</a>
         </div>
       </div>
 

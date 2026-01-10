@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   Home,
   LayoutDashboard,
@@ -11,6 +12,7 @@ import {
 
 const Sidebar = ({ role }) => {
   const { pathname } = useLocation();
+  const { logout } = useAuth();
 
   const linkClass = (path) =>
     `flex items-center gap-3 px-4 py-3 rounded-xl transition
@@ -68,7 +70,7 @@ const Sidebar = ({ role }) => {
         <button className={linkClass("#")}>
           <Settings size={18} /> Settings
         </button>
-        <button className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-black font-semibold">
+        <button onClick={logout} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-black font-semibold">
           <LogOut size={18} /> Log out
         </button>
       </div>
