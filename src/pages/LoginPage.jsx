@@ -1,65 +1,87 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import matatuIcon from "../assets/Matatu_icon.png";
 import googleIcon from "../assets/google_icon.png";
 
 export default function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("commuter");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  // Default role for logic, though actual role comes from backend usually
+  // We can let user pick role or simple login logic
+  const [role, setRole] = useState("commuter");
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !password) {
       setError("Username and password are required");
       return;
     }
     setError("");
-    console.log({ username, password, role });
+    setLoading(true);
+
+    try {
+      const user = await login({ username, password, role });
+      // Redirect based on role
+      if (user.role === "driver") navigate("/driver-dashboard");
+      else if (user.role === "manager") navigate("/dashboard-overview");
+      else navigate("/commuter-dashboard");
+
+    } catch (err) {
+      setError("Invalid username or password");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="mc-page">
+    <div className="mc-page flex items-center justify-center p-4">
       {/* Background */}
       <div className="mc-bg" />
       <div className="mc-grid" />
       <div className="mc-blob-a" />
       <div className="mc-blob-c" />
 
-      <div className="mc-shell flex items-center justify-center min-h-screen">
-        <div className="mc-card mc-card-pad w-full max-w-md">
+      <div className="mc-shell flex items-center justify-center min-h-screen py-10">
+        <div className="mc-card mc-card-pad w-full max-w-[420px]">
           {/* Brand */}
-          <div className="flex items-center gap-3 mb-6">
-            <img src={matatuIcon} alt="Matatu Connect" className="w-9 h-9" />
+          <div className="flex items-center gap-3 mb-8 justify-center">
+            <img src={matatuIcon} alt="Matatu Connect" className="w-10 h-10" />
             <div>
-              <h1 className="text-lg font-semibold">Matatu Connect</h1>
-              <p className="mc-muted text-sm">Welcome back</p>
+              <h1 className="text-xl font-semibold tracking-tight">Matatu Connect</h1>
+              <p className="mc-muted text-xs tracking-wider uppercase">Welcome back</p>
             </div>
           </div>
 
           {/* Heading */}
-          <h2 className="mc-h1 mb-2">Log in</h2>
-          <p className="mc-muted mb-6">
-            Please log in to continue
-          </p>
+          <div className="text-center mb-8">
+            <h2 className="mc-h2 mb-2">Log in to your account</h2>
+            <p className="mc-muted text-sm">
+              Enter your credentials to access your dashboard
+            </p>
+          </div>
 
-          {/* Role switcher */}
-          <div className="flex gap-2 mb-6">
+          {/* Role switcher (Optional visual cue) */}
+          <div className="flex bg-slate-900/50 p-1 rounded-xl mb-6">
             {[
               { id: "commuter", label: "Commuter" },
               { id: "driver", label: "Driver" },
-              { id: "sacco_manager", label: "Sacco Manager" },
+              { id: "manager", label: "Manager" },
             ].map((r) => (
               <button
                 key={r.id}
                 type="button"
                 onClick={() => setRole(r.id)}
-                className={`mc-btn mc-btn-sm flex-1 ${
-                  role === r.id
-                    ? "mc-btn-primary"
-                    : "mc-btn-ghost"
-                }`}
+                className={`flex-1 text-xs font-medium py-2 rounded-lg transition-all ${role === r.id
+                    ? "bg-emerald-500 text-slate-900 shadow-md"
+                    : "text-slate-400 hover:text-slate-200"
+                  }`}
               >
                 {r.label}
               </button>
@@ -67,7 +89,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="mc-label">Email or Username</label>
               <input
@@ -75,12 +97,20 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="mc-input"
-                placeholder="email@example.com"
+                placeholder="name@example.com"
               />
             </div>
 
             <div>
-              <label className="mc-label">Password</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="mc-label mb-0">Password</label>
+                <Link
+                  to="/forgot-password"
+                  className="text-[11px] text-emerald-400 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 value={password}
@@ -91,42 +121,39 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <p className="text-sm text-red-400">{error}</p>
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm text-center">
+                {error}
+              </div>
             )}
 
-            <div className="flex justify-end">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-emerald-400 hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
-
-            <button type="submit" className="mc-btn-primary w-full">
-              Login
+            <button
+              type="submit"
+              disabled={loading}
+              className="mc-btn-primary w-full shadow-lg shadow-emerald-900/20"
+            >
+              {loading ? "Logging in..." : "Log In"}
             </button>
           </form>
 
           {/* Divider */}
           <div className="flex items-center gap-4 my-6">
-            <div className="h-px flex-1 bg-white/10" />
-            <span className="text-xs text-slate-400">OR</span>
-            <div className="h-px flex-1 bg-white/10" />
+            <div className="h-px flex-1 bg-white/5" />
+            <span className="text-[10px] uppercase font-bold text-slate-500">Or continue with</span>
+            <div className="h-px flex-1 bg-white/5" />
           </div>
 
           {/* Google login */}
-          <button className="mc-btn-secondary w-full">
+          <button className="mc-btn-secondary w-full text-sm">
             <img src={googleIcon} alt="Google" className="w-4 h-4" />
-            <span>Sign in with Google</span>
+            <span>Google</span>
           </button>
 
           {/* Signup */}
-          <p className="text-sm text-center mt-6 mc-muted">
+          <p className="text-sm text-center mt-8 text-slate-400">
             Don’t have an account?{" "}
             <Link
               to="/commuter-signup"
-              className="text-emerald-400 hover:underline"
+              className="text-emerald-400 font-medium hover:underline ml-1"
             >
               Sign up
             </Link>

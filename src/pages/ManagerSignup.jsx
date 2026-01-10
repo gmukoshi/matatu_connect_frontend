@@ -1,45 +1,69 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import matatuIcon from "../assets/Matatu_icon.png";
 
-function ManagerSignup() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [saccoName, setSaccoName] = useState("");
-  const [email, setEmail] = useState("");
-  const [workEmail, setWorkEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [agree, setAgree] = useState(false);
+export default function ManagerSignup() {
+  const { signup } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    saccoName: "",
+    email: "",
+    workEmail: "",
+    password: "",
+    agree: false
+  });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({
-      firstName,
-      lastName,
-      saccoName,
-      email,
-      workEmail,
-      password,
-      agree,
-    });
+    setError("");
+
+    if (!formData.firstName || !formData.email || !formData.password || !formData.agree) {
+      setError("Please fill in all fields and agree to terms");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signup({ ...formData, role: "manager" });
+      navigate("/dashboard-overview");
+    } catch (err) {
+      setError("Failed to create account. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    const name = e.target.name;
+    setFormData({ ...formData, [name]: value });
   };
 
   return (
-    <div className="min-h-screen bg-background text-text-main flex flex-col">
+    <div className="mc-page text-slate-100 flex flex-col">
+      <div className="mc-bg" />
+
       {/* HEADER */}
-      <header className="border-b border-white/10">
+      <header className="relative z-10 border-b border-white/5 bg-slate-950/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <img src={matatuIcon} alt="Matatu Connect" className="w-7 h-7" />
+            <img src={matatuIcon} alt="Matatu Connect" className="w-8 h-8" />
             <div>
-              <p className="font-semibold leading-none">Matatu Connect</p>
-              <p className="text-xs text-text-muted">MANAGER PORTAL</p>
+              <p className="font-bold leading-none tracking-tight">Matatu Connect</p>
+              <p className="text-[10px] text-emerald-400 font-bold tracking-widest uppercase mt-0.5">Manager Portal</p>
             </div>
           </div>
 
-          <p className="text-sm text-text-muted">
+          <p className="text-sm text-slate-400 hidden sm:block">
             Already a partner?{" "}
-            <Link to="/login" className="text-primary font-semibold">
+            <Link to="/login" className="text-emerald-400 font-semibold hover:underline bg-emerald-500/10 px-3 py-1.5 rounded-full ml-1 transition-colors hover:bg-emerald-500/20">
               Log in →
             </Link>
           </p>
@@ -47,156 +71,177 @@ function ManagerSignup() {
       </header>
 
       {/* CONTENT */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-16 grid lg:grid-cols-2 gap-16 items-start">
+      <main className="relative z-10 flex-1 max-w-7xl mx-auto px-6 py-12 grid lg:grid-cols-2 gap-16 items-start">
         {/* LEFT INFO */}
-        <section>
-          <p className="text-sm font-semibold text-primary mb-4">
-            OFFICIAL PARTNER ACCESS
-          </p>
+        <section className="pt-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-6 border border-emerald-500/20">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            Official Partner Access
+          </div>
 
-          <h1 className="text-4xl font-bold mb-4">
-            Manage your fleet efficiently.
+          <h1 className="text-5xl font-bold mb-6 leading-[1.1]">
+            Manage your fleet <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">efficiently.</span>
           </h1>
 
-          <p className="text-text-muted max-w-lg mb-8">
+          <p className="text-slate-400 text-lg max-w-lg mb-10 leading-relaxed">
             Join Nairobi’s smartest transport network. Track revenue, monitor
             driver performance, and optimize routes in real time.
           </p>
 
-          <ul className="space-y-3 text-text-muted">
-            <li>✔ Real-time analytics & reporting</li>
-            <li>✔ Direct M-Pesa integration</li>
-            <li>✔ Fleet & driver monitoring</li>
+          <ul className="space-y-4 text-slate-300">
+            {[
+              "Real-time analytics & reporting",
+              "Direct M-Pesa integration",
+              "Fleet & driver monitoring",
+              "Automated compliance checks"
+            ].map((item, i) => (
+              <li key={i} className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                </div>
+                {item}
+              </li>
+            ))}
           </ul>
 
-          <p className="mt-8 text-sm text-text-muted">
-            Trusted by 500+ SACCO managers
-          </p>
+          <div className="mt-12 flex items-center gap-4">
+            <div className="flex -space-x-3">
+              {[1, 2, 3, 4].map(idx => (
+                <div key={idx} className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-950 flex items-center justify-center text-[10px] text-slate-500">U{idx}</div>
+              ))}
+            </div>
+            <p className="text-sm text-slate-400">
+              Trusted by <strong className="text-white">500+</strong> SACCO managers
+            </p>
+          </div>
         </section>
 
         {/* FORM CARD */}
-        <aside className="card max-w-xl w-full">
-          <h2 className="text-2xl font-semibold mb-1">
+        <aside className="mc-card p-8 w-full">
+          <h2 className="mc-h2 mb-2">
             Create Manager Account
           </h2>
-          <p className="text-text-muted mb-6">
+          <p className="mc-muted mb-6 text-sm">
             Enter your details to register your fleet.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="First name"
-                value={firstName}
-                onChange={setFirstName}
-                placeholder="John"
-              />
-              <Input
-                label="Last name"
-                value={lastName}
-                onChange={setLastName}
-                placeholder="Kamau"
+              <div>
+                <label className="mc-label">First Name</label>
+                <input
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  placeholder="John"
+                  className="mc-input"
+                />
+              </div>
+              <div>
+                <label className="mc-label">Last Name</label>
+                <input
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  placeholder="Wick"
+                  className="mc-input"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mc-label">SACCO Name / Fleet ID</label>
+              <input
+                name="saccoName"
+                value={formData.saccoName}
+                onChange={handleChange}
+                placeholder="Super Metro"
+                className="mc-input"
               />
             </div>
 
-            <Input
-              label="SACCO name / Fleet ID"
-              value={saccoName}
-              onChange={setSaccoName}
-              placeholder="Super Metro"
-            />
+            <div>
+              <label className="mc-label">Email</label>
+              <input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="admin@supermetro.co.ke"
+                className="mc-input"
+              />
+            </div>
 
-            <Input
-              label="Email address"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              placeholder="email@example.com"
-            />
+            <div>
+              <label className="mc-label">Work Email (Optional)</label>
+              <input
+                name="workEmail"
+                type="email"
+                value={formData.workEmail}
+                onChange={handleChange}
+                placeholder="admin@supermetro.co.ke"
+                className="mc-input"
+              />
+            </div>
 
-            <Input
-              label="Work email"
-              type="email"
-              value={workEmail}
-              onChange={setWorkEmail}
-              placeholder="manager@example.com"
-            />
+            <div>
+              <label className="mc-label">Password</label>
+              <input
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="mc-input"
+              />
+            </div>
 
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={setPassword}
-              placeholder="••••••••"
-            />
-
-            <label className="flex items-center gap-2 text-sm text-text-muted">
+            <label className="flex items-start gap-3 text-sm text-slate-400 mt-2 select-none cursor-pointer group">
               <input
                 type="checkbox"
-                checked={agree}
-                onChange={(e) => setAgree(e.target.checked)}
-                className="accent-primary"
+                name="agree"
+                checked={formData.agree}
+                onChange={handleChange}
+                className="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-800 text-emerald-500 focus:ring-emerald-500/50"
               />
-              <span>
+              <span className="group-hover:text-slate-300 transition-colors">
                 I agree to the{" "}
-                <a href="#" className="text-primary">
-                  Terms
+                <a href="#" className="text-emerald-400 hover:underline">
+                  Terms of Service
                 </a>{" "}
                 and{" "}
-                <a href="#" className="text-primary">
-                  Privacy
+                <a href="#" className="text-emerald-400 hover:underline">
+                  Privacy Policy
                 </a>
                 .
               </span>
             </label>
 
+            {error && <p className="text-red-400 text-sm">{error}</p>}
+
             <button
               type="submit"
-              disabled={!agree}
-              className="btn-primary w-full disabled:opacity-50"
+              disabled={!formData.agree || loading}
+              className="mc-btn-primary w-full mt-2"
             >
-              Create Account
-            </button>
-
-            <div className="text-center text-sm text-text-muted">
-              Or continue with
-            </div>
-
-            <button type="button" className="btn-secondary w-full">
-              Sign up with Google
+              {loading ? "Creating Account..." : "Create Manager Account"}
             </button>
           </form>
         </aside>
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex justify-between text-sm text-text-muted">
-          <span>© 2024 Matatu Connect</span>
-          <div className="flex gap-6">
-            <a href="#">Help</a>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
+      <footer className="relative z-10 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500">
+          <span>© 2024 Matatu Connect. All rights reserved.</span>
+          <div className="flex gap-6 mt-4 md:mt-0">
+            <a href="#" className="hover:text-slate-300 transition-colors">Help Center</a>
+            <a href="#" className="hover:text-slate-300 transition-colors">Privacy</a>
+            <a href="#" className="hover:text-slate-300 transition-colors">Terms</a>
           </div>
         </div>
       </footer>
     </div>
   );
 }
-
-function Input({ label, value, onChange, placeholder, type = "text" }) {
-  return (
-    <div>
-      <label className="text-sm text-text-muted">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="mt-1 w-full rounded-lg bg-black/30 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
-      />
-    </div>
-  );
-}
-
-export default ManagerSignup;

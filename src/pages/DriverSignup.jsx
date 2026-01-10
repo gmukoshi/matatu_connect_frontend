@@ -1,146 +1,192 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import matatuIcon from "../assets/Matatu_icon.png";
 
 export default function DriverSignup() {
-  const [firstName, setFirstName] = useState("");
-  const [secondName, setSecondName] = useState("");
-  const [licence, setLicence] = useState("");
-  const [plate, setPlate] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { signup } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    secondName: "",
+    licence: "",
+    plate: "",
+    email: "",
+    password: "",
+  });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({
-      firstName,
-      secondName,
-      licence,
-      plate,
-      email,
-      password,
-    });
+    setError("");
+
+    if (!formData.firstName || !formData.email || !formData.password) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signup({ ...formData, role: "driver" });
+      navigate("/driver-dashboard");
+    } catch (err) {
+      setError("Failed to create account. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
-    <div className="min-h-screen grid md:grid-cols-2">
-      {/* LEFT – FORM */}
-      <div className="flex items-center justify-center px-6 bg-background">
-        <div className="w-full max-w-lg bg-white p-8 rounded-2xl shadow">
+    <div className="mc-page flex items-center justify-center p-4">
+      {/* Background Elements */}
+      <div className="mc-bg" />
+      <div className="mc-grid" />
+      <div className="mc-blob-a" />
+      <div className="mc-blob-c" />
+
+      <div className="mc-shell grid lg:grid-cols-2 gap-12 items-center max-w-5xl">
+
+        {/* LEFT – FORM CARD */}
+        <div className="mc-card mc-card-pad w-full">
           {/* Brand */}
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-3 mb-6">
             <img src={matatuIcon} alt="Matatu Connect" className="w-8 h-8" />
-            <span className="font-bold text-lg text-secondary">
-              Matatu Connect
-            </span>
+            <span className="text-lg font-semibold tracking-tight">Matatu Connect</span>
           </div>
 
-          {/* Heading */}
-          <h1 className="text-2xl font-bold mb-2">
-            Create your driver account
-          </h1>
-          <p className="text-text-muted mb-6">
-            Register as a driver and start operating smarter.
+          <h1 className="mc-h2 mb-2">Driver Registration</h1>
+          <p className="mc-muted mb-8 text-sm">
+            Join our network of professional drivers and manage your trips efficiently.
           </p>
 
-          {/* Social buttons (UI only) */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <button className="border rounded-lg py-2 hover:bg-surface transition">
-              Continue with Google
-            </button>
-            <button className="border rounded-lg py-2 hover:bg-surface transition">
-              Continue with Apple
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-text-muted">
-              Or register with email
-            </span>
-            <div className="flex-1 h-px bg-gray-200" />
-          </div>
-
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <input
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="First name"
-                className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"
-              />
-              <input
-                value={secondName}
-                onChange={(e) => setSecondName(e.target.value)}
-                placeholder="Second name"
-                className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"
-              />
+              <div>
+                <label className="mc-label">First Name</label>
+                <input
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  placeholder="John"
+                  className="mc-input"
+                />
+              </div>
+              <div>
+                <label className="mc-label">Last Name</label>
+                <input
+                  name="secondName"
+                  value={formData.secondName}
+                  onChange={handleChange}
+                  placeholder="Kamau"
+                  className="mc-input"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mc-label">Licence No.</label>
+                <input
+                  name="licence"
+                  value={formData.licence}
+                  onChange={handleChange}
+                  placeholder="DL-12345"
+                  className="mc-input"
+                />
+              </div>
+              <div>
+                <label className="mc-label">Number Plate</label>
+                <input
+                  name="plate"
+                  value={formData.plate}
+                  onChange={handleChange}
+                  placeholder="KAA 123A"
+                  className="mc-input"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mc-label">Email Address</label>
               <input
-                value={licence}
-                onChange={(e) => setLicence(e.target.value)}
-                placeholder="Driver licence number"
-                className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"
-              />
-              <input
-                value={plate}
-                onChange={(e) => setPlate(e.target.value)}
-                placeholder="Vehicle number plate"
-                className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="driver@example.com"
+                className="mc-input"
               />
             </div>
 
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email address"
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"
-            />
+            <div>
+              <label className="mc-label">Password</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="mc-input"
+              />
+            </div>
 
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"
-            />
+            {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
 
-            <button type="submit" className="btn-primary w-full mt-4">
-              Sign up as Driver
+            <button
+              type="submit"
+              disabled={loading}
+              className="mc-btn-primary w-full mt-4"
+            >
+              {loading ? "Creating Account..." : "Sign Up as Driver"}
             </button>
           </form>
 
-          <p className="text-sm text-text-muted text-center mt-6">
+          <p className="text-sm text-center mt-6 mc-muted">
             Already have an account?{" "}
-            <a href="/login" className="text-secondary hover:underline">
+            <Link to="/login" className="mc-link">
               Log in
-            </a>
+            </Link>
           </p>
         </div>
-      </div>
 
-      {/* RIGHT – INFO PANEL */}
-      <div className="hidden md:flex items-center justify-center bg-surface px-10">
-        <div className="max-w-md text-center">
-          <div className="bg-white rounded-2xl h-48 mb-6 flex items-center justify-center text-text-muted shadow-sm">
-            Icon / Illustration
+        {/* RIGHT – INFO PANEL (Desktop only) */}
+        <div className="hidden lg:block space-y-8 pl-8">
+          <div className="space-y-4">
+            <h2 className="mc-h1">Drive Smarter,<br />Earn Better.</h2>
+            <p className="text-slate-400 text-lg leading-relaxed">
+              Get real-time trip requests, optimize your routes, and manage your earnings directly from the dashboard.
+            </p>
           </div>
 
-          <h2 className="text-xl font-semibold mb-2">
-            Live Tracking & Real-time Updates
-          </h2>
-          <p className="text-text-muted">
-            Never miss your ride again. Track your matatu in real-time and plan
-            your journey with confidence.
-          </p>
-
-          <div className="flex justify-center gap-2 mt-6">
-            <span className="w-2 h-2 bg-primary rounded-full" />
-            <span className="w-2 h-2 bg-gray-300 rounded-full" />
-            <span className="w-2 h-2 bg-gray-300 rounded-full" />
+          <div className="grid gap-4">
+            <div className="flex gap-4 items-start">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">1</div>
+              <div>
+                <h3 className="font-semibold text-white">Verified Profile</h3>
+                <p className="text-sm text-slate-400">Build trust with verified badges and ratings.</p>
+              </div>
+            </div>
+            <div className="flex gap-4 items-start">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">2</div>
+              <div>
+                <h3 className="font-semibold text-white">Route Analytics</h3>
+                <p className="text-sm text-slate-400">See high-demand areas and peak times.</p>
+              </div>
+            </div>
+            <div className="flex gap-4 items-start">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">3</div>
+              <div>
+                <h3 className="font-semibold text-white">Fleet Connection</h3>
+                <p className="text-sm text-slate-400">Seamlessly link with your SACCO or fleet manager.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
