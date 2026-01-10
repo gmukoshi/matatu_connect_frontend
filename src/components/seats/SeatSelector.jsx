@@ -14,7 +14,7 @@ const SeatSelector = ({ totalSeats = 14, bookedSeats = [], onConfirm }) => {
   };
 
   return (
-    <div className="card space-y-6">
+    <div className="mc-card mc-card-pad space-y-6">
       <h3 className="text-lg font-semibold text-white">
         Select Your Seat
       </h3>
@@ -33,10 +33,9 @@ const SeatSelector = ({ totalSeats = 14, bookedSeats = [], onConfirm }) => {
               disabled={isBooked}
               className={`
                 h-12 rounded-lg font-semibold text-sm transition
-                ${
-                  isBooked
-                    ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                    : isSelected
+                ${isBooked
+                  ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                  : isSelected
                     ? "bg-primary text-black"
                     : "bg-surface-dark text-white hover:bg-primary/30"
                 }
@@ -52,9 +51,15 @@ const SeatSelector = ({ totalSeats = 14, bookedSeats = [], onConfirm }) => {
       <button
         disabled={!selectedSeats.length}
         onClick={() => onConfirm(selectedSeats)}
-        className="btn-primary w-full"
+        className={`mc-btn-primary w-full shadow-lg ${!selectedSeats.length ? "opacity-50 grayscale cursor-not-allowed" : "hover:scale-[1.02]"
+          }`}
       >
-        Confirm Seat ({selectedSeats.join(", ") || "None"})
+        <span className="font-bold">Confirm Selection</span>
+        {selectedSeats.length > 0 && (
+          <span className="bg-black/20 px-2 py-0.5 rounded text-xs">
+            {selectedSeats.length} seat{selectedSeats.length > 1 ? "s" : ""}
+          </span>
+        )}
       </button>
     </div>
   );

@@ -14,11 +14,10 @@ const Sidebar = ({ role }) => {
 
   const linkClass = (path) =>
     `flex items-center gap-3 px-4 py-3 rounded-xl transition
-     ${
-       pathname === path
-         ? "bg-primary/20 text-primary"
-         : "text-text-muted hover:bg-white/5 hover:text-white"
-     }`;
+     ${pathname === path
+      ? "bg-primary/20 text-primary"
+      : "text-text-muted hover:bg-white/5 hover:text-white"
+    }`;
 
   return (
     <aside className="hidden md:flex w-64 flex-col bg-surface-dark border-r border-white/10">
@@ -51,15 +50,15 @@ const Sidebar = ({ role }) => {
             <Link to="/dashboard-overview" className={linkClass("/dashboard-overview")}>
               <LayoutDashboard size={18} /> Overview
             </Link>
-            <button className={linkClass("#")}>
+            <Link to="/manager/fleet" className={linkClass("/manager/fleet")}>
               <Bus size={18} /> Fleet
-            </button>
-            <button className={linkClass("#")}>
+            </Link>
+            <Link to="/manager/drivers" className={linkClass("/manager/drivers")}>
               <Users size={18} /> Drivers
-            </button>
-            <button className={linkClass("#")}>
+            </Link>
+            <Link to="/manager/routes" className={linkClass("/manager/routes")}>
               <Route size={18} /> Routes
-            </button>
+            </Link>
           </>
         )}
       </nav>
