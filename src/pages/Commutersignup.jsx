@@ -1,250 +1,172 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import matatuIcon from "../assets/Matatu_icon.png";
-import "../index.css";
 
-function CommuterSignup() {
-  const [firstname, setfirstname] = useState("");
-  const [secondname, setsecondname] = useState("");
-  const [email, setemail] = useState("");
-  const [password, setpassword] = useState("");
+export default function CommuterSignup() {
+  const { signup } = useAuth();
+  const navigate = useNavigate();
 
-  return (
-    <Commuter
-      firstname={firstname}
-      setfirstname={setfirstname}
-      secondname={secondname}
-      setsecondname={setsecondname}
-      email={email}
-      setemail={setemail}
-      password={password}
-      setpassword={setpassword}
-    />
-  );
-}
+  const [formData, setFormData] = useState({
+    firstname: "",
+    secondname: "",
+    email: "",
+    password: "",
+  });
 
-export default CommuterSignup;
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-function Commuter({
-  firstname,
-  setfirstname,
-  secondname,
-  setsecondname,
-  email,
-  setemail,
-  password,
-  setpassword,
-}) {
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ firstname, secondname, email, password });
+    setError("");
+
+    if (!formData.firstname || !formData.email || !formData.password) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Combine names for backend
+      const payload = {
+        name: `${formData.firstname} ${formData.secondname}`.trim(),
+        email: formData.email,
+        password: formData.password,
+        role: "commuter"
+      };
+      await signup(payload);
+      navigate("/commuter-dashboard");
+    } catch (err) {
+      console.error("Signup error:", err);
+      // Extract specific error message from backend response if available
+      const errorMessage = err.response?.data?.error || "Failed to create account. Please try again.";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
-    <main className="signupPage">
-      <section className="signupLayout">
-        {/* LEFT */}
-        <section className="leftPanel">
-          <MatatuConnect text="Matatu Connect" icon={matatuIcon} />
+    <div className="mc-page flex items-center justify-center p-4">
+      {/* Background Elements */}
+      <div className="mc-bg" />
+      <div className="mc-grid" />
+      <div className="mc-blob-b" />
 
-          <section className="card">
-            <CreateAccount
-              title="Create your Account"
-              subtitle="Ride smarter across Kenya. Join the community today."
-            />
+      <div className="mc-shell grid lg:grid-cols-2 gap-16 items-center max-w-5xl">
 
-            <div className="socialRow">
-              <GoogleButton text="Continue with Google" />
-              <AppleButton text="Continue with Apple" />
+        {/* LEFT – INFO PANEL (Desktop only) */}
+        <div className="hidden lg:block space-y-8 pr-8">
+          <div className="space-y-4">
+            <h2 className="mc-h1">The Smart Way<br />to Move.</h2>
+            <p className="text-slate-400 text-lg leading-relaxed">
+              Join thousands of commuters who save time and travel safely with Matatu Connect.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <blockquote className="mc-glass p-6 text-sm italic text-slate-300 border-l-4 border-emerald-500">
+              "Since using Matatu Connect, I never worry about finding a ride during rush hour. It's a game changer!"
+              <footer className="mt-3 font-semibold not-italic text-white">– Jane W., Daily Commuter</footer>
+            </blockquote>
+          </div>
+        </div>
+
+        {/* RIGHT – FORM CARD */}
+        <div className="mc-card mc-card-pad w-full">
+          {/* Brand */}
+          <div className="flex items-center gap-3 mb-6">
+            <img src={matatuIcon} alt="Matatu Connect" className="w-8 h-8" />
+            <span className="text-lg font-semibold tracking-tight">Matatu Connect</span>
+          </div>
+
+          <h1 className="mc-h2 mb-2">Create Account</h1>
+          <p className="mc-muted mb-8 text-sm">
+            Sign up to track rides, pay securely, and rate your trips.
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mc-label">First Name</label>
+                <input
+                  name="firstname"
+                  value={formData.firstname}
+                  onChange={handleChange}
+                  placeholder="Jane"
+                  className="mc-input"
+                />
+              </div>
+              <div>
+                <label className="mc-label">Last Name</label>
+                <input
+                  name="secondname"
+                  value={formData.secondname}
+                  onChange={handleChange}
+                  placeholder="Doe"
+                  className="mc-input"
+                />
+              </div>
             </div>
 
-            <RegisterwithMail text="Or register with email" />
+            <div>
+              <label className="mc-label">Email Address</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="jane@example.com"
+                className="mc-input"
+              />
+            </div>
 
-            <Signupform
-              firstname={firstname}
-              setfirstname={setfirstname}
-              secondname={secondname}
-              setsecondname={setsecondname}
-              email={email}
-              setemail={setemail}
-              password={password}
-              setpassword={setpassword}
-              onSubmit={handleSubmit}
-            />
+            <div>
+              <label className="mc-label">Password</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="mc-input"
+              />
+            </div>
 
-            <Signupbutton text="Sign up" />
-          </section>
-        </section>
+            {/* Social mock buttons */}
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <button type="button" className="mc-btn-secondary text-xs py-2.5">
+                Google
+              </button>
+              <button type="button" className="mc-btn-secondary text-xs py-2.5">
+                Apple
+              </button>
+            </div>
 
-        {/* RIGHT */}
-        <aside className="rightPanel">
-          <Rightpanelimage />
-          <Rightpanel
-            title="Live Tracking & Real-time Updates"
-            body="Never miss your ride again. Track your matatu in real-time and plan your journey with confidence."
-          />
-          <Rightpaneldash activeIndex={0} total={3} />
-        </aside>
-      </section>
-    </main>
-  );
-}
+            {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
 
-function MatatuConnect({ text, icon }) {
-  return (
-    <div className="matatuConnect">
-      <img className="brandIcon" src={icon} alt="Matatu icon" />
-      <span className="brandText">{text}</span>
-    </div>
-  );
-}
+            <button
+              type="submit"
+              disabled={loading}
+              className="mc-btn-primary w-full mt-6"
+            >
+              {loading ? "Creating Account..." : "Sign Up"}
+            </button>
+          </form>
 
-function CreateAccount({ title, subtitle }) {
-  return (
-    <div className="createAccount">
-      <h1 className="title">{title}</h1>
-      <p className="subtitle">{subtitle}</p>
-    </div>
-  );
-}
-
-function GoogleButton({ text }) {
-  return (
-    <button type="button" className="socialBtn">
-      {text}
-    </button>
-  );
-}
-
-function AppleButton({ text }) {
-  return (
-    <button type="button" className="socialBtn">
-      {text}
-    </button>
-  );
-}
-
-function RegisterwithMail({ text }) {
-  return <p className="registerWithMail">{text}</p>;
-}
-
-function Signupform({
-  firstname,
-  setfirstname,
-  secondname,
-  setsecondname,
-  email,
-  setemail,
-  password,
-  setpassword,
-  onSubmit,
-}) {
-  return (
-    <form className="signupForm" onSubmit={onSubmit}>
-      <div className="fieldGrid">
-        <Firstname firstname={firstname} setfirstname={setfirstname} />
-        <Secondname secondname={secondname} setsecondname={setsecondname} />
+          <p className="text-sm text-center mt-6 mc-muted">
+            Already have an account?{" "}
+            <Link to="/login" className="mc-link">
+              Log in
+            </Link>
+          </p>
+        </div>
       </div>
-
-      <Email email={email} setemail={setemail} />
-      <Password password={password} setpassword={setpassword} />
-
-      <button type="submit" className="hiddenSubmit">
-        Submit
-      </button>
-    </form>
-  );
-}
-
-function Signupbutton({ text }) {
-  return (
-    <button type="submit" className="primaryBtn">
-      {text}
-    </button>
-  );
-}
-
-function Rightpanelimage() {
-  return (
-    <div className="rightImageWrap">
-      <div className="rightImagePlaceholder">Image</div>
     </div>
-  );
-}
-
-function Rightpanel({ title, body }) {
-  return (
-    <div className="rightText">
-      <h2 className="rightTitle">{title}</h2>
-      <p className="rightBody">{body}</p>
-    </div>
-  );
-}
-
-function Rightpaneldash({ total = 3, activeIndex = 0 }) {
-  const dots = Array.from({ length: total });
-  return (
-    <div className="dots">
-      {dots.map((_, i) => (
-        <span key={i} className={`dot ${i === activeIndex ? "dotActive" : ""}`} />
-      ))}
-    </div>
-  );
-}
-
-function Firstname({ firstname, setfirstname }) {
-  return (
-    <label className="field">
-      <span className="label">First name</span>
-      <input
-        value={firstname}
-        onChange={(e) => setfirstname(e.target.value)}
-        placeholder="First name"
-        autoComplete="given-name"
-      />
-    </label>
-  );
-}
-
-function Secondname({ secondname, setsecondname }) {
-  return (
-    <label className="field">
-      <span className="label">Second name</span>
-      <input
-        value={secondname}
-        onChange={(e) => setsecondname(e.target.value)}
-        placeholder="Second name"
-        autoComplete="family-name"
-      />
-    </label>
-  );
-}
-
-function Email({ email, setemail }) {
-  return (
-    <label className="field">
-      <span className="label">Email</span>
-      <input
-        value={email}
-        onChange={(e) => setemail(e.target.value)}
-        placeholder="email"
-        type="email"
-        autoComplete="email"
-      />
-    </label>
-  );
-}
-
-function Password({ password, setpassword }) {
-  return (
-    <label className="field">
-      <span className="label">Password</span>
-      <input
-        value={password}
-        onChange={(e) => setpassword(e.target.value)}
-        placeholder="password"
-        type="password"
-        autoComplete="new-password"
-      />
-    </label>
   );
 }

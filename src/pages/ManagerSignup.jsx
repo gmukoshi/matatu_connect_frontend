@@ -1,163 +1,254 @@
-import React, { useState } from "react";
-import matatuIcon from "../assets/Matatu_icon.png"; 
-import "../index.css";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import matatuIcon from "../assets/Matatu_icon.png";
 
-function ManagerSignup() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [saccoName, setSaccoName] = useState("");
-  const [email, setEmail] = useState("");
-  const [workEmail, setWorkEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [agree, setAgree] = useState(false);
+export default function ManagerSignup() {
+  const { signup } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    saccoName: "",
+    email: "",
+    workEmail: "",
+    password: "",
+    agree: false
+  });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ firstName, lastName, saccoName, email, workEmail, password, agree });
+    setError("");
+
+    if (!formData.firstName || !formData.email || !formData.password || !formData.agree) {
+      setError("Please fill in all fields and agree to terms");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Backend expects 'name', 'email', 'password', 'role'
+      const payload = {
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        password: formData.password,
+        role: "sacco_manager"
+      };
+      await signup(payload);
+      navigate("/dashboard-overview");
+    } catch (err) {
+      setError("Failed to create account. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    const name = e.target.name;
+    setFormData({ ...formData, [name]: value });
   };
 
   return (
-    <div className="page">
-      <header className="top">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src={matatuIcon} alt="Matatu Connect" width="28" height="28" />
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 14 }}>Matatu Connect</div>
-            <div style={{ fontSize: 10, opacity: 0.7 }}>MANAGER PORTAL</div>
-          </div>
-        </div>
+    <div className="mc-page text-slate-100 flex flex-col">
+      <div className="mc-bg" />
 
-        <div style={{ fontSize: 12 }}>
-          <span style={{ opacity: 0.7 }}>Already a partner?</span>{" "}
-          <a href="#" style={{ fontWeight: 600 }}>Log in →</a>
+      {/* HEADER */}
+      <header className="relative z-10 border-b border-white/5 bg-slate-950/50 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <img src={matatuIcon} alt="Matatu Connect" className="w-8 h-8" />
+            <div>
+              <p className="font-bold leading-none tracking-tight">Matatu Connect</p>
+              <p className="text-[10px] text-emerald-400 font-bold tracking-widest uppercase mt-0.5">Manager Portal</p>
+            </div>
+          </div>
+
+          <p className="text-sm text-slate-400 hidden sm:block">
+            Already a partner?{" "}
+            <Link to="/login" className="text-emerald-400 font-semibold hover:underline bg-emerald-500/10 px-3 py-1.5 rounded-full ml-1 transition-colors hover:bg-emerald-500/20">
+              Log in →
+            </Link>
+          </p>
         </div>
       </header>
 
-      <main className="wrap">
-        <section className="grid">
-          <section className="left">
-            <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.8 }}>
-              OFFICIAL PARTNER ACCESS
+      {/* CONTENT */}
+      <main className="relative z-10 flex-1 max-w-7xl mx-auto px-6 py-12 grid lg:grid-cols-2 gap-16 items-start">
+        {/* LEFT INFO */}
+        <section className="pt-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-6 border border-emerald-500/20">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            Official Partner Access
+          </div>
+
+          <h1 className="text-5xl font-bold mb-6 leading-[1.1]">
+            Manage your fleet <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">efficiently.</span>
+          </h1>
+
+          <p className="text-slate-400 text-lg max-w-lg mb-10 leading-relaxed">
+            Join Nairobi’s smartest transport network. Track revenue, monitor
+            driver performance, and optimize routes in real time.
+          </p>
+
+          <ul className="space-y-4 text-slate-300">
+            {[
+              "Real-time analytics & reporting",
+              "Direct M-Pesa integration",
+              "Fleet & driver monitoring",
+              "Automated compliance checks"
+            ].map((item, i) => (
+              <li key={i} className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                </div>
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-12 flex items-center gap-4">
+            <div className="flex -space-x-3">
+              {[1, 2, 3, 4].map(idx => (
+                <div key={idx} className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-950 flex items-center justify-center text-[10px] text-slate-500">U{idx}</div>
+              ))}
             </div>
-
-            <h1 style={{ margin: "14px 0 10px" }}>
-              Manage your fleet efficiently.
-            </h1>
-
-            <p style={{ margin: 0, opacity: 0.75, maxWidth: 520 }}>
-              Join Nairobi’s smartest transport network. Track revenue, monitor driver
-              performance, and optimize routes in real time.
+            <p className="text-sm text-slate-400">
+              Trusted by <strong className="text-white">500+</strong> SACCO managers
             </p>
-
-            <ul style={{ marginTop: 18, paddingLeft: 18, opacity: 0.9 }}>
-              <li style={{ marginBottom: 8 }}>Real-time Analytics</li>
-              <li>Direct M-Pesa Integration</li>
-            </ul>
-
-            <p style={{ marginTop: 18, opacity: 0.7, fontSize: 12 }}>
-              Trusted by 500+ SACCO managers
-            </p>
-          </section>
-
-          <aside className="card">
-            <h2 style={{ margin: 0 }}>Create Manager Account</h2>
-            <p style={{ marginTop: 6, opacity: 0.75 }}>
-              Enter your details to register your fleet.
-            </p>
-
-            <form onSubmit={handleSubmit} style={{ display: "grid", gap: 10 }}>
-              <div className="two">
-                <Field
-                  label="First name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="John"
-                />
-                <Field
-                  label="Last name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Kamau"
-                />
-              </div>
-
-              <Field
-                label="Sacco name / fleet ID"
-                value={saccoName}
-                onChange={(e) => setSaccoName(e.target.value)}
-                placeholder="e.g. Super Metro"
-              />
-
-              <Field
-                label="Email address"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@example.com"
-              />
-
-              <Field
-                label="Work email"
-                type="email"
-                value={workEmail}
-                onChange={(e) => setWorkEmail(e.target.value)}
-                placeholder="manager@example.com"
-              />
-
-              <Field
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-              />
-
-              <label style={{ display: "flex", gap: 10, fontSize: 12, opacity: 0.8 }}>
-                <input
-                  type="checkbox"
-                  checked={agree}
-                  onChange={(e) => setAgree(e.target.checked)}
-                />
-                <span>
-                  I agree to the <a href="#">Terms</a> and <a href="#">Privacy</a>.
-                </span>
-              </label>
-
-              <button className="primary" type="submit" disabled={!agree}>
-                Create Account
-              </button>
-
-              <div style={{ textAlign: "center", fontSize: 12, opacity: 0.7 }}>
-                Or continue with
-              </div>
-
-              <button className="secondary" type="button">
-                Sign up with Google
-              </button>
-            </form>
-          </aside>
+          </div>
         </section>
 
-        <footer className="foot">
-          <span style={{ opacity: 0.7, fontSize: 12 }}>
-            2024 Matatu Connect. All rights reserved.
-          </span>
-          <div style={{ display: "flex", gap: 14, fontSize: 12, opacity: 0.7 }}>
-            <a href="#">Help Center</a>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-          </div>
-        </footer>
+        {/* FORM CARD */}
+        <aside className="mc-card p-8 w-full">
+          <h2 className="mc-h2 mb-2">
+            Create Manager Account
+          </h2>
+          <p className="mc-muted mb-6 text-sm">
+            Enter your details to register your fleet.
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mc-label">First Name</label>
+                <input
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  placeholder="John"
+                  className="mc-input"
+                />
+              </div>
+              <div>
+                <label className="mc-label">Last Name</label>
+                <input
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  placeholder="Wick"
+                  className="mc-input"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mc-label">SACCO Name / Fleet ID</label>
+              <input
+                name="saccoName"
+                value={formData.saccoName}
+                onChange={handleChange}
+                placeholder="Super Metro"
+                className="mc-input"
+              />
+            </div>
+
+            <div>
+              <label className="mc-label">Email</label>
+              <input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="admin@supermetro.co.ke"
+                className="mc-input"
+              />
+            </div>
+
+            <div>
+              <label className="mc-label">Work Email (Optional)</label>
+              <input
+                name="workEmail"
+                type="email"
+                value={formData.workEmail}
+                onChange={handleChange}
+                placeholder="admin@supermetro.co.ke"
+                className="mc-input"
+              />
+            </div>
+
+            <div>
+              <label className="mc-label">Password</label>
+              <input
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="mc-input"
+              />
+            </div>
+
+            <label className="flex items-start gap-3 text-sm text-slate-400 mt-2 select-none cursor-pointer group">
+              <input
+                type="checkbox"
+                name="agree"
+                checked={formData.agree}
+                onChange={handleChange}
+                className="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-800 text-emerald-500 focus:ring-emerald-500/50"
+              />
+              <span className="group-hover:text-slate-300 transition-colors">
+                I agree to the{" "}
+                <a href="#" className="text-emerald-400 hover:underline">
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a href="#" className="text-emerald-400 hover:underline">
+                  Privacy Policy
+                </a>
+                .
+              </span>
+            </label>
+
+            {error && <p className="text-red-400 text-sm">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={!formData.agree || loading}
+              className="mc-btn-primary w-full mt-2"
+            >
+              {loading ? "Creating Account..." : "Create Manager Account"}
+            </button>
+          </form>
+        </aside>
       </main>
+
+      {/* FOOTER */}
+      <footer className="relative z-10 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500">
+          <span>© 2024 Matatu Connect. All rights reserved.</span>
+          <div className="flex gap-6 mt-4 md:mt-0">
+            <a href="#" className="hover:text-slate-300 transition-colors">Help Center</a>
+            <a href="#" className="hover:text-slate-300 transition-colors">Privacy</a>
+            <a href="#" className="hover:text-slate-300 transition-colors">Terms</a>
+          </div>
+        </div>
+      </footer>
     </div>
-  );
-}
-export default  ManagerSignup
-function Field({ label, value, onChange, placeholder, type = "text" }) {
-  return (
-    <label style={{ display: "grid", gap: 6 }}>
-      <span style={{ fontSize: 12, opacity: 0.75 }}>{label}</span>
-      <input value={value} onChange={onChange} placeholder={placeholder} type={type} />
-    </label>
   );
 }

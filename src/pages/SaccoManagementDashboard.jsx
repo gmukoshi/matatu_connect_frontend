@@ -1,214 +1,160 @@
-import React from "react";
-import "../index.css";
-function DashboardOverview() {
+import React, { useState } from "react";
+import LiveMap from "../components/map/LiveMap";
+import { useAuth } from "../context/AuthContext";
+import {
+  LogOut,
+  MoreHorizontal,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
+
+import { fetchMatatus } from "../api/matatus";
+import { fetchRoutes } from "../api/routes";
+import { fetchDrivers } from "../api/users";
+import RevenueChart from "../components/charts/RevenueChart";
+
+export default function SaccoManagementDashboard() {
+  const { user, logout } = useAuth();
+
+  // Data States
+  const [availableDrivers, setAvailableDrivers] = useState([]);
+  const [mapVehicles, setMapVehicles] = useState([]);
+
+  // Fetch Data
+  const loadData = async () => {
+    try {
+      // Fetch Drivers for quick view
+      const resDrivers = await fetchDrivers();
+      const driverData = Array.isArray(resDrivers.data) ? resDrivers.data : (resDrivers.data.data || []);
+
+      // Filter only active drivers (optional, but good for dashboard)
+      setAvailableDrivers(driverData);
+
+      // Fetch Vehicles for Map
+      const resVehicles = await fetchMatatus();
+      const vehicleList = resVehicles.data?.data || resVehicles.data || [];
+
+      // Generate Mock Coordinates for each real vehicle (around Nairobi)
+      const mappedVehicles = vehicleList.map((v, index) => ({
+        id: v.id,
+        name: `${v.plate_number} (${v.route?.name || "Unassigned"})`,
+        // Random coords around Nairobi (-1.2921, 36.8219)
+        lat: -1.2921 + (Math.random() - 0.5) * 0.05,
+        lng: 36.8219 + (Math.random() - 0.5) * 0.05,
+        status: v.assignment_status
+      }));
+
+      setMapVehicles(mappedVehicles);
+
+    } catch (err) {
+      console.error("Failed to load dashboard data", err);
+    }
+  };
+
+  React.useEffect(() => {
+    loadData();
+  }, []);
+
   return (
-    <div className="appShell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="avatar" />
-          <div className="brandText">
-            <div className="brandTitle">Matatu Connect</div>
-            <div className="brandSub">SUPER ADMIN</div>
-          </div>
+    <div className="max-w-7xl mx-auto space-y-8 relative">
+      {/* TOP HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 className="text-2xl font-bold text-white">Dashboard Overview</h1>
+
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Action buttons moved to Sidebar/Dedicated pages */}
+
+          <button onClick={logout} className="p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 hover:bg-red-500/20">
+            <LogOut className="w-5 h-5" />
+          </button>
         </div>
+      </div>
 
-        <nav className="nav">
-          <button className="navItem active">Dashboard</button>
-          <button className="navItem">Fleet Management</button>
-          <button className="navItem">Drivers</button>
-          <button className="navItem">Routes & Stops</button>
-          <button className="navItem">Revenue</button>
-        </nav>
+      {/* STATS GRID */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Total Revenue" value="KES 4.2M" subtext="Vs. KES 3.75M last month" trend="+12%" trendUp={true} />
+        <StatCard label="Active Fleet" value="45/50" subtext="5 vehicles in maintenance" trend="+2%" trendUp={true} />
+        <StatCard label="Daily Passengers" value="12.4K" subtext="Due to heavy rains" trend="-5%" trendUp={false} />
+        <StatCard label="Fuel Efficiency" value="8.5 km/L" subtext="Fleet average" badge="Stable" />
+      </div>
 
-        <div className="sidebarBottom">
-          <button className="navItem">Settings</button>
-          <button className="primaryBtn">Log Out</button>
-        </div>
-      </aside>
-
-      <main className="main">
-        <header className="topbar">
-          <h1 className="pageTitle">Dashboard Overview</h1>
-
-          <div className="topbarRight">
-            <input
-              className="search"
-              placeholder="Search vehicle, driver, or route..."
-              aria-label="Search"
-            />
-            <div className="iconRow">
-              <button className="iconBtn" aria-label="Notifications">🔔</button>
-              <button className="iconBtn" aria-label="Messages">💬</button>
-            </div>
-            <button className="primaryBtn">+ New Vehicle</button>
-          </div>
-        </header>
-
-        <section className="statsRow">
-          <StatCard
-            title="Total Revenue"
-            value="KES4.2M"
-            meta="Vs. KES 3.75M last month"
-            badge="+12%"
-          />
-          <StatCard
-            title="Active Fleet"
-            value="45/50"
-            meta="5 vehicles in maintenance"
-            badge="+2%"
-          />
-          <StatCard
-            title="Daily Passengers"
-            value="12.4K"
-            meta="Due to heavy rains"
-            badge="-5%"
-          />
-          <StatCard
-            title="Fuel Efficiency"
-            value="8.5km/L"
-            meta="Fleet average"
-            badge="Stable"
-          />
-        </section>
-
-        <section className="grid2">
-          <Card
-            title="Revenue this Month"
-            subtitle="Comparison with previous period"
-            rightSlot={<button className="ghostBtn" aria-label="More">⋯</button>}
-          >
-            <div className="placeholder" style={{ height: 220 }}>
-              Chart placeholder
-            </div>
-            <div className="axisRow">
-              {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((d) => (
-                <span key={d} className="axisTick">{d}</span>
-              ))}
-            </div>
-          </Card>
-
-          <Card
-            title="Fleet Distribution"
-            subtitle=""
-            rightSlot={<span className="pill">Live</span>}
-          >
-            <div className="placeholder" style={{ height: 260 }}>
-              Map placeholder
-            </div>
-
-            <div className="mapPins">
-              <span className="pin">🚌</span>
-              <span className="pin">🚌</span>
-              <span className="pin">🟠</span>
-            </div>
-          </Card>
-        </section>
-
-        <section className="tableSection">
-          <div className="tableHeader">
+      {/* CHARTS SECTION */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="mc-card p-6">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <div className="cardTitle">Active Drivers</div>
-              <div className="cardSub">Real-time status of on-duty personnel</div>
+              <h3 className="text-lg font-bold text-white">Revenue Overview</h3>
+              <p className="text-text-muted text-sm">Last 7 Days vs Previous Week</p>
             </div>
-
-            <div className="tableActions">
-              <button className="ghostBtn">Filter</button>
-              <button className="ghostBtn">Export</button>
+            <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full text-xs font-bold">
+              <TrendingUp className="w-4 h-4" />
+              +12.5%
             </div>
           </div>
-
-          <div className="tableWrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>DRIVER NAME</th>
-                  <th>VEHICLE PLATE</th>
-                  <th>CURRENT ROUTE</th>
-                  <th>STATUS</th>
-                  <th className="right">ACTION</th>
-                </tr>
-              </thead>
-              <tbody>
-                <DriverRow
-                  name="John Kamau"
-                  id="ID-DR-4401"
-                  plate="KBC455T"
-                  route="Route 44 (Thika Rd)"
-                  status="Active"
-                />
-                <DriverRow
-                  name="Sarah Omondi"
-                  id="ID-DR-2105"
-                  plate="KDA 892L"
-                  route="Route 11 (South B)"
-                  status="Idle"
-                />
-                <DriverRow
-                  name="David K."
-                  id="ID-DR-3302"
-                  plate="KAZ771M"
-                  route="Route 23 (Westlands)"
-                  status="Active"
-                />
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
-
-      
-    </div>
-  );
-}
-
-function StatCard({ title, value, meta, badge }) {
-  return (
-    <div className="statCard">
-      <div className="statTop">
-        <div className="statTitle">{title}</div>
-        <span className="badge">{badge}</span>
-      </div>
-      <div className="statValue">{value}</div>
-      <div className="statMeta">{meta}</div>
-    </div>
-  );
-}
-
-function Card({ title, subtitle, rightSlot, children }) {
-  return (
-    <div className="card">
-      <div className="cardHead">
-        <div>
-          <div className="cardTitle">{title}</div>
-          {subtitle ? <div className="cardSub">{subtitle}</div> : null}
+          <RevenueChart />
         </div>
-        <div>{rightSlot}</div>
-      </div>
-      <div className="cardBody">{children}</div>
-    </div>
-  );
-}
 
-function DriverRow({ name, id, plate, route, status }) {
-  return (
-    <tr>
-      <td>
-        <div className="rowPerson">
-          <div className="rowAvatar" />
-          <div>
-            <div className="rowName">{name}</div>
-            <div className="rowSub">{id}</div>
+        <div className="mc-card p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-white">Drivers</h3>
+            <button className="text-emerald-400 text-sm hover:underline">View All</button>
+          </div>
+          <div className="space-y-4">
+            {availableDrivers.slice(0, 4).map((driver) => (
+              <div key={driver.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-surface border border-white/10 flex items-center justify-center text-white font-bold">
+                    {driver.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-sm">{driver.name}</p>
+                    <p className="text-xs text-text-muted">{driver.email}</p>
+                  </div>
+                </div>
+                <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-lg">Active</span>
+              </div>
+            ))}
+            {availableDrivers.length === 0 && <p className="text-text-muted text-sm text-center py-4">No drivers registered yet.</p>}
           </div>
         </div>
-      </td>
-      <td><span className="chip">{plate}</span></td>
-      <td>{route}</td>
-      <td><span className={`status ${status.toLowerCase()}`}>{status}</span></td>
-      <td className="right"><button className="ghostBtn">⋮</button></td>
-    </tr>
+      </div>
+
+      {/* MIDDLE SECTION (Map) */}
+      <div className="grid lg:grid-cols-1 gap-6 h-[400px]">
+        {/* MINI MAP */}
+        <div className="mc-card p-0 overflow-hidden relative flex flex-col">
+          <div className="absolute top-4 left-4 z-10 flex justify-between w-[calc(100%-32px)] items-center">
+            <h3 className="text-sm font-bold text-white bg-black/50 backdrop-blur px-3 py-1 rounded-full">Fleet Distribution</h3>
+            <span className="text-[10px] font-bold bg-emerald-500 text-black px-2 py-0.5 rounded">Live</span>
+          </div>
+          <div className="flex-1 bg-surface-dark">
+            <LiveMap vehicles={mapVehicles} centerVehicle={mapVehicles[0]} />
+          </div>
+        </div>
+      </div>
+
+    </div>
   );
 }
-export default DashboardOverview;
 
-
-
+// Sub-Component for Top Cards
+function StatCard({ label, value, subtext, trend, trendUp, badge }) {
+  return (
+    <div className="mc-card p-5 hover:border-primary/30 transition-colors">
+      <div className="flex justify-between items-start mb-2">
+        <p className="text-text-muted text-sm font-medium">{label}</p>
+        {trend && (
+          <span className={`text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${trendUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+            {trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {trend}
+          </span>
+        )}
+        {badge && (
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-text-muted">{badge}</span>
+        )}
+      </div>
+      <h3 className="text-2xl font-bold text-white mb-1">{value}</h3>
+      <p className="text-xs text-text-muted">{subtext}</p>
+    </div>
+  )
+}

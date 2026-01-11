@@ -1,47 +1,76 @@
-import { createContext, useState, useEffect } from 'react';
-import { loginUser } from '../api/auth';
+import { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { registerUser, loginUser, logoutUser } from "../api/auth";
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-    // Check if user is already logged in on page refresh
-    useEffect(() => {
-        const savedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('access_token');
-        if (savedUser && token) {
-            setUser(JSON.parse(savedUser));
-        }
-        setLoading(false);
-    }, []);
+  // Load user from local storage on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem("mc_user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
+  }, []);
 
-    const login = async (credentials) => {
-        try {
-            const data = await loginUser(credentials);
-            // Data expected: { access_token: "...", user: { id: 1, role: "driver", ... } }
-            localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            setUser(data.user);
-            return { success: true };
-        } catch (error) {
-            return {
-                success: false,
-                message: error.response?.data?.msg || 'Login failed',
-            };
-        }
-    };
+  const login = async (credentials) => {
+    try {
+      const data = await loginUser(credentials);
+      setUser(data.user);
+      localStorage.setItem("mc_user", JSON.stringify(data.user));
+      localStorage.setItem("access_token", data.access_token);
+      return data.user;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
+  };
 
-    const logout = () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
-        setUser(null);
-    };
+  const signup = async (data) => {
+    try {
+      const response = await registerUser(data);
+      // Check if response contains user data directly or if we need to login after
+      // Based on auth.py: returns {message, user}
+      // We might not get a token immediately on register unless we modify backend to return it.
+      // For now, let's assume we might need to login or we just redirect.
+      // But to keep consistency with "login" state:
+      if (response.user) {
+        // We don't have a token here based on the backend code seen (only returns message & user)
+        // So the user stays logged out until they sign in OR we auto-login manually.
+        // For better UX, usually we auto-login.
+        // But since backend register doesn't return token, we can't set "access_token".
+        // Ideally backend should return token on register.
+        // For now, let's just return success and let the component navigate.
+        return response.user;
+      }
+    } catch (error) {
+      console.error("Signup failed:", error);
+      throw error;
+    }
+  };
 
-    return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
-            {!loading && children}
-        </AuthContext.Provider>
-    );
+  const logout = () => {
+    logoutUser();
+    setUser(null);
+    localStorage.removeItem("mc_user");
+    navigate("/login");
+  };
+
+  const value = {
+    user,
+    loading,
+    login,
+    signup,
+    logout,
+    isAuthenticated: !!user,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

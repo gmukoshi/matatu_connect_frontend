@@ -1,131 +1,204 @@
-import React, { useState } from "react";
-import "../index.css";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import matatuIcon from "../assets/Matatu_icon.png";
 
 export default function DriverSignup() {
-  const [firstName, setFirstName] = useState("");
-  const [secondName, setSecondName] = useState("");
-  const [licence, setLicence] = useState("");
-  const [plate, setPlate] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { signup } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    secondName: "",
+    licence: "",
+    plate: "",
+    email: "",
+    password: "",
+  });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ firstName, secondName, licence, plate, email, password });
+    setError("");
+
+    if (!formData.firstName || !formData.email || !formData.password) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Combine names for backend
+      const payload = {
+        name: `${formData.firstName} ${formData.secondName}`.trim(),
+        email: formData.email,
+        password: formData.password,
+        licence: formData.licence,
+        plate: formData.plate,
+        role: "driver"
+      };
+      await signup(payload);
+      navigate("/driver-dashboard");
+    } catch (err) {
+      setError("Failed to create account. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
-    <main className="page">
-      <header className="topbar">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src={matatuIcon} alt="Matatu Connect" width="26" height="26" />
-          <span>Matatu Connect</span>
-        </div>
-        <button type="button">Help</button>
-      </header>
+    <div className="mc-page flex items-center justify-center p-4">
+      {/* Background Elements */}
+      <div className="mc-bg" />
+      <div className="mc-grid" />
+      <div className="mc-blob-a" />
+      <div className="mc-blob-c" />
 
-      <section className="layout">
-        {/* LEFT */}
-        <section>
-          <h1>Create your Account</h1>
-          <p>Ride smarter across Kenya. Join the community today.</p>
+      <div className="mc-shell grid lg:grid-cols-2 gap-12 items-center max-w-5xl">
 
-          <div className="row2">
-            <button type="button">Google</button>
-            <button type="button">Apple</button>
+        {/* LEFT – FORM CARD */}
+        <div className="mc-card mc-card-pad w-full">
+          {/* Brand */}
+          <div className="flex items-center gap-3 mb-6">
+            <img src={matatuIcon} alt="Matatu Connect" className="w-8 h-8" />
+            <span className="text-lg font-semibold tracking-tight">Matatu Connect</span>
           </div>
 
-          <hr />
+          <h1 className="mc-h2 mb-2">Driver Registration</h1>
+          <p className="mc-muted mb-8 text-sm">
+            Join our network of professional drivers and manage your trips efficiently.
+          </p>
 
-          <form onSubmit={handleSubmit}>
-            <div className="row2">
-              <label>
-                Driver Firstname
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mc-label">First Name</label>
                 <input
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
                   placeholder="John"
+                  className="mc-input"
                 />
-              </label>
-
-              <label>
-                Driver second name
+              </div>
+              <div>
+                <label className="mc-label">Last Name</label>
                 <input
-                  value={secondName}
-                  onChange={(e) => setSecondName(e.target.value)}
-                  placeholder="Doe"
+                  name="secondName"
+                  value={formData.secondName}
+                  onChange={handleChange}
+                  placeholder="Kamau"
+                  className="mc-input"
                 />
-              </label>
+              </div>
             </div>
 
-            <div className="row2">
-              <label>
-                Driver's licence
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mc-label">Licence No.</label>
                 <input
-                  value={licence}
-                  onChange={(e) => setLicence(e.target.value)}
-                  placeholder="XXXXXXX"
+                  name="licence"
+                  value={formData.licence}
+                  onChange={handleChange}
+                  placeholder="DL-12345"
+                  className="mc-input"
                 />
-              </label>
-
-              <label>
-                Vehicle number plate
+              </div>
+              <div>
+                <label className="mc-label">Number Plate</label>
                 <input
-                  value={plate}
-                  onChange={(e) => setPlate(e.target.value)}
-                  placeholder="KXXX XXX"
+                  name="plate"
+                  value={formData.plate}
+                  onChange={handleChange}
+                  placeholder="KAA 123A"
+                  className="mc-input"
                 />
-              </label>
+              </div>
             </div>
 
-            <label>
-              Email Address
+            <div>
+              <label className="mc-label">Email Address</label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="driver@example.com"
+                className="mc-input"
               />
-            </label>
+            </div>
 
-            <label>
-              Password
+            <div>
+              <label className="mc-label">Password</label>
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="mc-input"
               />
-            </label>
+            </div>
 
-            <button type="submit" className="cta">
-              Sign Up
+            {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mc-btn-primary w-full mt-4"
+            >
+              {loading ? "Creating Account..." : "Sign Up as Driver"}
             </button>
-
-            <p style={{ marginTop: 12 }}>
-              Already have an account? <button type="button">Log In</button>
-            </p>
           </form>
-        </section>
 
-        {/* RIGHT */}
-        <aside className="right">
-          <div>Icon</div>
-          <div>
-            <h2>Live Tracking & Real-time Updates</h2>
-            <p>
-              Never miss your ride again. Track your matatu in real-time and
-              plan your journey with confidence.
+          <p className="text-sm text-center mt-6 mc-muted">
+            Already have an account?{" "}
+            <Link to="/login" className="mc-link">
+              Log in
+            </Link>
+          </p>
+        </div>
+
+        {/* RIGHT – INFO PANEL (Desktop only) */}
+        <div className="hidden lg:block space-y-8 pl-8">
+          <div className="space-y-4">
+            <h2 className="mc-h1">Drive Smarter,<br />Earn Better.</h2>
+            <p className="text-slate-400 text-lg leading-relaxed">
+              Get real-time trip requests, optimize your routes, and manage your earnings directly from the dashboard.
             </p>
           </div>
-          <div className="dots">
-            <span />
-            <span />
-            <span />
+
+          <div className="grid gap-4">
+            <div className="flex gap-4 items-start">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">1</div>
+              <div>
+                <h3 className="font-semibold text-white">Verified Profile</h3>
+                <p className="text-sm text-slate-400">Build trust with verified badges and ratings.</p>
+              </div>
+            </div>
+            <div className="flex gap-4 items-start">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">2</div>
+              <div>
+                <h3 className="font-semibold text-white">Route Analytics</h3>
+                <p className="text-sm text-slate-400">See high-demand areas and peak times.</p>
+              </div>
+            </div>
+            <div className="flex gap-4 items-start">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">3</div>
+              <div>
+                <h3 className="font-semibold text-white">Fleet Connection</h3>
+                <p className="text-sm text-slate-400">Seamlessly link with your SACCO or fleet manager.</p>
+              </div>
+            </div>
           </div>
-        </aside>
-      </section>
-    </main>
+        </div>
+      </div>
+    </div>
   );
 }

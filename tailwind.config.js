@@ -2,43 +2,54 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
   ],
+
   theme: {
     extend: {
+      /* =========================
+         COLORS — GREEN ONLY
+      ========================= */
       colors: {
-        // The vibrant green used for Buttons & Success states
         primary: {
-          DEFAULT: '#22C55E', // Green-500
-          hover: '#16A34A',   // Green-600
-          light: '#4ADE80',   // Green-400
+          DEFAULT: "#22C55E", // main green
+          hover: "#16A34A",
+          light: "#4ADE80",
         },
-        // The deep dark background (Main App Background)
-        background: '#0B0E11', 
-        
-        // Slightly lighter dark for Cards, Modals, and Sidebars
-        surface: {
-          DEFAULT: '#18181B', // Zinc-900
-          light: '#27272A',   // Zinc-800
-        },
-        
-        // The Yellow/Orange used for Matatu Icons on the map
-        accent: '#F59E0B', // Amber-500
-        
-        // Text Colors
+
+        /* BACKGROUNDS */
+        background: "#0B0F0E",
+        surface: "#111716",
+        "surface-dark": "#0D1211",
+
+        /* TEXT */
         text: {
-          main: '#FFFFFF',
-          muted: '#9CA3AF', // Gray-400
-        }
+          main: "#E5E7EB",
+          muted: "#9CA3AF",
+          inverse: "#000000",
+        },
+
+        /* STATUS */
+        success: "#22C55E",
+        warning: "#F59E0B",
+        danger: "#EF4444",
       },
+
+      /* =========================
+         TYPOGRAPHY
+      ========================= */
       fontFamily: {
-        // Ensure you use a clean sans-serif font like Inter
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ["Inter", "system-ui", "sans-serif"],
       },
+
+      /* =========================
+         EFFECTS
+      ========================= */
       boxShadow: {
-        'glow': '0 0 15px rgba(34, 197, 94, 0.5)', // Green glow for active states
-      }
+        glow: "0 0 20px rgba(34, 197, 94, 0.35)",
+      },
     },
   },
+
   plugins: [],
-}
+};

@@ -1,57 +1,167 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
-/* 2. Initialize Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 3. Apply Your Custom Theme Defaults */
-body {
-  /* Use the variables we defined in tailwind.config.js */
-  @apply bg-background text-text-main font-sans antialiased;
+/* =========================
+   BASE
+========================= */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+  }
+}
+
+/* =========================
+   COMPONENTS
+========================= */
+/* =========================
+   COMPONENTS
+========================= */
+@layer components {
+  /* ========== PAGE BACKGROUND ========== */
+  .mc-page {
+    @apply min-h-screen relative overflow-hidden bg-slate-950 text-slate-100;
+  }
+
+  .mc-bg {
+    @apply absolute inset-0 bg-gradient-to-b
+    from-slate-950 via-slate-950 to-slate-900;
+  }
+
+  .mc-grid {
+    @apply pointer-events-none absolute inset-0 opacity-[0.06]
+    [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)]
+    [background-size:48px_48px];
+  }
+
+  /* === GREEN BLOBS (FIXED OPACITY) === */
+  .mc-blob-a {
+    @apply pointer-events-none absolute -top-24 -left-24 h-80 w-80
+    rounded-full bg-emerald-500/10 blur-3xl;
+  }
+
+  .mc-blob-b {
+    @apply pointer-events-none absolute top-32 left-1/3 h-64 w-64
+    rounded-full bg-emerald-400/10 blur-3xl;
+  }
+
+  .mc-blob-c {
+    @apply pointer-events-none absolute bottom-0 right-0 h-96 w-96
+    rounded-full bg-emerald-600/10 blur-3xl;
+  }
+
+  /* ========== CONTAINER ========== */
+  .mc-shell {
+    @apply relative mx-auto w-full max-w-6xl px-6 py-8;
+  }
+
+  /* ========== GLASS UI ========== */
+  .mc-glass {
+    @apply rounded-3xl bg-white/5 ring-1 ring-white/10 backdrop-blur-xl;
+  }
+
+  .mc-card {
+    @apply mc-glass shadow-[0_30px_80px_-30px_rgba(0,0,0,0.9)];
+  }
+
+  .mc-card-pad {
+    @apply p-6 sm:p-8;
+  }
+
+  .mc-section {
+    @apply mc-card p-5;
+  }
+
+  /* ========== TEXT ========== */
+  .mc-h1 {
+    @apply text-4xl font-semibold leading-tight;
+  }
+
+  .mc-h2 {
+    @apply text-xl font-semibold;
+  }
+
+  .mc-muted {
+    @apply text-slate-400;
+  }
+
+  .mc-label {
+    @apply text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1 block;
+  }
+
+  /* ========== BUTTONS ========== */
+  .mc-btn {
+    @apply inline-flex items-center justify-center gap-2
+    rounded-2xl px-4 py-3 font-semibold transition
+    outline-none focus-visible:ring-2
+    focus-visible:ring-emerald-500/40
+    disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .mc-btn-primary {
+    @apply mc-btn bg-emerald-500 text-slate-950
+    hover:bg-emerald-400
+    shadow-[0_10px_30px_-10px_rgba(16,185,129,0.6)];
+  }
+
+  .mc-btn-secondary {
+    @apply mc-btn bg-white/5 text-slate-200
+    ring-1 ring-white/10 hover:bg-white/10;
+  }
+
+  .mc-btn-ghost {
+    @apply mc-btn bg-transparent text-slate-200
+    hover:bg-white/5 ring-1 ring-white/10;
+  }
+
+  .mc-btn-sm {
+    @apply rounded-xl px-3 py-2 text-sm;
+  }
+
+  /* ========== INPUTS ========== */
+  .mc-input {
+    @apply w-full rounded-2xl
+    bg-slate-900/60 px-4 py-3
+    text-slate-100 placeholder:text-slate-500
+    ring-1 ring-white/10 outline-none
+    focus:ring-2 focus:ring-emerald-500/50
+    transition-all duration-200;
+  }
   
-  /* Reset the default Vite centering behavior */
-  margin: 0;
-  display: block; /* Important: Fixes the "everything centered" bug */
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-}
+  /* Link styles */
+  .mc-link {
+    @apply text-emerald-400 hover:text-emerald-300 hover:underline transition-colors;
+  }
 
-.card {
-  width: 100%;
-  max-width: 380px;
-  padding: 28px;
-  border: 1px solid #ddd;
-  border-radius: 16px;
-}
+  /* ========== DASHBOARD LAYOUTS ========== */
+  .mc-app {
+    @apply min-h-screen bg-slate-950 text-slate-100;
+  }
 
-.top {
-  margin: 0 0 16px;
-  text-align: center;
-  font-size: 13px;
-}
+  .mc-app-grid {
+    @apply min-h-screen grid grid-cols-1 lg:grid-cols-[260px_1fr];
+  }
 
-.brand {
-  display: grid;
-  place-items: center;
-  margin-bottom: 12px;
-}
+  .mc-sidebar {
+    @apply hidden lg:flex flex-col gap-6 p-6
+    bg-white/5 ring-1 ring-white/10;
+  }
 
-/* 4. Custom Scrollbar*/
-::-webkit-scrollbar {
-  width: 8px;
-}
+  .mc-nav-item {
+    @apply flex items-center gap-3 rounded-2xl
+    px-3 py-2.5 text-sm text-slate-200
+    hover:bg-white/5 transition;
+  }
 
-::-webkit-scrollbar-track {
-  @apply bg-surface;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-surface-light rounded-full;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary-hover;
+  .mc-nav-item-active {
+    @apply bg-emerald-500/15 ring-1 ring-emerald-500/30;
+  }
 }

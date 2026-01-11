@@ -1,93 +1,378 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import LiveMap from "../components/map/LiveMap";
+import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
-import MainLayout from "../components/layout/MainLayout";
+import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle } from "lucide-react";
+import { acceptVehicle, rejectVehicle, fetchMatatus } from "../api/matatus";
+import { fetchBookings, updateBookingStatus } from "../api/bookings";
 
 const DriverDashboard = () => {
-  const { vehicles, bookingRequests, respondToBooking } = useApp();
-  const [online, setOnline] = useState(false);
+  const { vehicles, setVehicles } = useApp();
+  const { user, logout } = useAuth();
+  const [online, setOnline] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [bookings, setBookings] = useState([]);
 
-  const toggleOnline = () => setOnline(!online);
+  // Find vehicle assigned to this driver
+  const myVehicle = useMemo(() => {
+    if (!user || !vehicles) return null;
+    return vehicles.find((v) => v.driverId === user.id);
+  }, [vehicles, user]);
 
-  const driverId = 101; // match your mock data
-  const myVehicle = vehicles.find((v) => v.driverId === driverId);
+  useEffect(() => {
+    if (myVehicle && myVehicle.assignment_status === 'active') {
+      loadBookings();
+    }
+  }, [myVehicle]);
 
-  const filteredVehicles = useMemo(() => {
-    if (!myVehicle) return [];
-    return vehicles.filter(
-      (v) => v.routeName === myVehicle.routeName && v.id !== myVehicle.id
+  const loadBookings = async () => {
+    try {
+      const res = await fetchBookings();
+      // Ensure we get an array. The backend returns { data: [...], message: "..." }
+      const data = res.data.data || [];
+      setBookings(data);
+    } catch (err) {
+      console.error("Failed to load bookings", err);
+    }
+  };
+
+  const handleAccept = async () => {
+    if (!myVehicle) return;
+    setIsProcessing(true);
+    try {
+      await acceptVehicle(myVehicle.id);
+      alert("Assignment Accepted! You are now active.");
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to accept");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!myVehicle) return;
+    if (!window.confirm("Are you sure you want to reject this assignment?")) return;
+    setIsProcessing(true);
+    try {
+      await rejectVehicle(myVehicle.id);
+      alert("Assignment Rejected.");
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to reject");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleBookingAction = async (id, action) => {
+    try {
+      await updateBookingStatus(id, action);
+      // Optimistic update or reload
+      setBookings(prev => prev.map(b =>
+        b.id === id ? { ...b, status: action === 'accept' ? 'confirmed' : 'rejected' } : b
+      ));
+      // alert(`Booking ${action}ed`);
+    } catch (err) {
+      console.error(`Failed to ${action} booking`, err);
+      alert(`Failed to ${action} booking`);
+    }
+  };
+
+  // PENDING ASSIGNMENT MODAL
+  if (myVehicle && myVehicle.assignment_status === "pending") {
+    // ... (Modal Content - Unchanged)
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-6">
+        <div className="mc-card w-full max-w-lg p-8 text-center animate-in zoom-in duration-300">
+          <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Users className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">New Vehicle Assignment</h2>
+          <p className="text-text-muted mb-6">
+            You have been assigned to drive <strong className="text-white">{myVehicle.plate_number}</strong>.
+            <br />
+            Capacity: {myVehicle.capacity} Passengers.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={handleReject}
+              disabled={isProcessing}
+              className="py-3 px-4 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 font-bold flex items-center justify-center gap-2"
+            >
+              <XCircle className="w-5 h-5" /> Reject
+            </button>
+            <button
+              onClick={handleAccept}
+              disabled={isProcessing}
+              className="py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+            >
+              <CheckCircle className="w-5 h-5" /> Accept Assignment
+            </button>
+          </div>
+        </div>
+      </div>
     );
-  }, [vehicles, myVehicle]);
+  }
+
+  // Transform bookings to UI format
+  const upcomingPickups = bookings.map((b, idx) => ({
+    id: b.id,
+    name: b.user_name || "Passenger",
+    location: "Boarding Point", // Could get from route origin
+    time: "Ready",
+    type: idx === 0 ? "next" : "upcoming",
+    avatar: `https://i.pravatar.cc/150?img=${(b.id % 70) + 1}`
+  }));
+
+  // Fallback if no bookings
+  if (upcomingPickups.length === 0 && myVehicle) {
+    upcomingPickups.push({ id: 999, name: "No passengers yet", location: "Waiting for bookings", time: "--", type: "upcoming", avatar: "https://i.pravatar.cc/150?img=0" });
+  }
 
   return (
-    <MainLayout role="driver">
-      <h2 className="text-2xl font-bold mb-4">Driver Dashboard</h2>
-      <button
-        onClick={toggleOnline}
-        className={`px-4 py-2 mb-4 rounded text-white ${
-          online ? "bg-green-600" : "bg-gray-500"
-        }`}
-      >
-        {online ? "Go Offline" : "Go Online"}
-      </button>
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+            Habari, {user?.name?.split(" ")[0] || "Driver"}! <span className="text-2xl">👋</span>
+          </h1>
+          <p className="text-text-muted mt-1">
+            {myVehicle ? (
+              <span className="flex items-center gap-2">
+                Vehicle: <span className="text-white font-mono bg-white/10 px-2 rounded">{myVehicle.plate_number}</span>
+                <span className="text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase font-bold">Active</span>
+              </span>
+            ) : "No vehicle assigned currently."}
+          </p>
+        </div>
 
-      {myVehicle && (
-        <div className="map-container mb-6">
-          <LiveMap
-            vehicles={[myVehicle, ...filteredVehicles].map((v) => ({
-              ...v,
-              lat: Number(v.lat),
-              lng: Number(v.lng),
-              route: Array.isArray(v.route)
-                ? v.route.map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) }))
-                : [],
-            }))}
-            centerVehicle={myVehicle}
+        <div className="flex items-center gap-4">
+          {/* Online Toggle */}
+          <div className={`
+            flex items-center gap-3 px-4 py-2 rounded-full border transition-all cursor-pointer
+            ${online ? "bg-emerald-500/10 border-emerald-500/50" : "bg-surface border-white/10"}
+          `} onClick={() => setOnline(!online)}>
+            <div className={`w-10 h-6 rounded-full relative transition-colors ${online ? "bg-emerald-500" : "bg-slate-600"}`}>
+              <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${online ? "translate-x-4" : ""}`} />
+            </div>
+            <div className="text-sm">
+              <p className={`font-bold ${online ? "text-emerald-400" : "text-slate-400"}`}>
+                {online ? "You are Online" : "You are Offline"}
+              </p>
+              <p className="text-[10px] text-text-muted">
+                {online ? "Searching for trips..." : "Not visible to passengers"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors text-sm font-medium border border-red-500/20"
+          >
+            <LogOut size={16} />
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* STATS GRID */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* EARNINGS CARD (Big Green) */}
+        <div className="lg:col-span-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl p-8 text-black relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+
+          <div className="relative z-10 flex justify-between items-start">
+            <div>
+              <p className="font-medium opacity-80 mb-1">Today's Earnings</p>
+              <h2 className="text-5xl font-bold mb-4">KES4,500</h2>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-black/10 rounded-full text-xs font-semibold">
+                <span>📈 +12% vs yesterday</span>
+              </div>
+              <span className="text-xs opacity-60 ml-3">Updated 5m ago</span>
+            </div>
+            <div className="p-3 bg-black/10 rounded-2xl">
+              <Wallet className="w-6 h-6" />
+            </div>
+          </div>
+        </div>
+
+        {/* SIDE STATS */}
+        <div className="space-y-6">
+          <StatCard
+            icon={<Clock className="w-5 h-5 text-yellow-400" />}
+            label="Hours Online"
+            value="6h 12m"
+            subtext="Since 6:00 AM"
+          />
+          <StatCard
+            icon={<Navigation className="w-5 h-5 text-emerald-400" />}
+            label="Trips Today"
+            value={bookings.length.toString()}
+            subtext="Total Passengers"
           />
         </div>
-      )}
+      </div>
 
-      {myVehicle && (
-        <div className="mt-4 p-4 border rounded shadow-sm bg-white">
-          <h3 className="text-xl font-semibold mb-2">Your Vehicle</h3>
-          <p><strong>Name:</strong> {myVehicle.name}</p>
-          <p><strong>Status:</strong> {myVehicle.status}</p>
-          <p><strong>Seats Available:</strong> {myVehicle.passengerCapacity}</p>
-          {myVehicle.routeName && <p><strong>Route:</strong> {myVehicle.routeName}</p>}
-        </div>
-      )}
+      {/* BOTTOM GRID */}
+      <div className="grid lg:grid-cols-2 gap-8">
 
-      {bookingRequests.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-xl font-semibold mb-2">Live Booking Requests</h3>
-          <ul className="space-y-1">
-            {bookingRequests.map((b) => (
-              <li key={b.id} className="border p-2 rounded shadow-sm">
-                <p><strong>Commuter:</strong> {b.commuterName}</p>
-                <p><strong>Status:</strong> {b.status}</p>
-                {b.status === "pending" && (
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      onClick={() => respondToBooking(b.id, "accepted")}
-                      className="px-3 py-1 bg-green-600 text-white rounded"
-                    >
-                      Accept
-                    </button>
-                    <button
-                      onClick={() => respondToBooking(b.id, "rejected")}
-                      className="px-3 py-1 bg-red-600 text-white rounded"
-                    >
-                      Reject
-                    </button>
+        {/* UPCOMING PICKUPS */}
+        <div className="bg-surface-dark rounded-3xl p-6 border border-white/5">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-white">Upcoming Pickups</h3>
+            <button className="text-emerald-400 text-sm font-semibold hover:underline">View All</button>
+          </div>
+
+          <div className="space-y-1">
+            {upcomingPickups.map((pickup, idx) => (
+              <div key={pickup.id} className={`p-4 rounded-2xl transition-all ${pickup.type === "next"
+                ? "bg-emerald-500/10 border border-emerald-500/20 mb-4"
+                : "hover:bg-white/5 border border-transparent"
+                }`}>
+                {pickup.type === "next" && (
+                  <div className="flex justify-between items-center mb-3 text-[10px] font-bold uppercase tracking-wider">
+                    <span className="text-emerald-400">Next Stop</span>
+                    <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">{pickup.time} away</span>
                   </div>
                 )}
-              </li>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <img src={pickup.avatar} alt={pickup.name} className="w-10 h-10 rounded-full object-cover border-2 border-surface" />
+                    <div>
+                      <p className="font-bold text-white text-sm">{pickup.name}</p>
+                      <div className="flex items-center gap-1 text-xs text-text-muted mt-0.5">
+                        <MapPin className="w-3 h-3" />
+                        {pickup.location}
+                      </div>
+                    </div>
+                  </div>
+
+                  {pickup.type === "next" ? (
+                    <button className="bg-emerald-500 text-black px-4 py-1.5 rounded-full text-xs font-bold hover:bg-emerald-400 transition-colors">
+                      Arrived
+                    </button>
+                  ) : (
+                    <span className="text-xs font-medium text-text-muted">{pickup.time}</span>
+                  )}
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
-      )}
-    </MainLayout>
+
+        {/* SEAT LAYOUT & ROUTE PREVIEW */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* SEAT LAYOUT */}
+          <div className="bg-surface-dark rounded-3xl p-6 border border-white/5 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-white">Seat Layout</h3>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-red-500/20 border border-red-500/50"></div> Booked</span>
+                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-white/5 border border-white/10"></div> Available</span>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col items-center justify-center p-4 bg-black/20 rounded-2xl border border-white/5">
+              {/* Driver Seat Row */}
+              <div className="w-full flex justify-end mb-8 border-b border-dashed border-white/10 pb-4">
+                <div className="w-12 h-12 rounded-lg border-2 border-emerald-500/50 bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                  <Users className="w-5 h-5" />
+                </div>
+              </div>
+
+              {/* Passenger Seats Grid */}
+              <div className="grid grid-cols-4 gap-4 w-full max-w-xs">
+                {Array.from({ length: myVehicle?.capacity || 14 }).map((_, i) => {
+                  const seatNum = (i + 1).toString();
+                  const isBooked = bookings.some(b => b.seat_number === seatNum);
+
+                  return (
+                    <div
+                      key={i}
+                      className={`
+                                        aspect-square rounded-lg flex items-center justify-center text-sm font-bold border transition-all
+                                        ${isBooked
+                          ? "bg-red-500/20 border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                          : "bg-white/5 border-white/10 text-text-muted hover:bg-white/10 hover:border-white/20"
+                        }
+                                    `}
+                    >
+                      {seatNum}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-6 text-center">
+                <p className="text-sm text-text-muted">
+                  <span className="text-white font-bold">{bookings.length}</span> / {myVehicle?.capacity || 14} Seats Occupied
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* MAP / ROUTE PREVIEW */}
+          <div className="bg-surface-dark rounded-3xl p-6 border border-white/5 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-white">Route Preview</h3>
+              <div className="flex gap-2">
+                <button className="p-2 bg-white/5 rounded-lg hover:bg-white/10 text-white"><Search className="w-4 h-4" /></button>
+              </div>
+            </div>
+
+            <div className="flex-1 relative rounded-2xl overflow-hidden min-h-[300px]">
+              {/* Map Component */}
+              {myVehicle ? (
+                <LiveMap vehicles={[myVehicle]} centerVehicle={myVehicle} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-text-muted">
+                  <p>No active vehicle assigned to track.</p>
+                </div>
+              )}
+
+              {/* Traffic Overlay */}
+              <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md rounded-xl p-3 border border-white/10 flex items-start gap-3">
+                <div className="p-2 bg-yellow-500/20 rounded-lg text-yellow-500">
+                  <Navigation className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Heavy Traffic</p>
+                  <p className="text-xs text-text-muted mt-0.5">Expected delay: +5 mins on Waiyaki Way</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
+
+// Helper Component for small stat cards
+function StatCard({ icon, label, value, subtext }) {
+  return (
+    <div className="bg-surface-dark rounded-3xl p-5 border border-white/5 flex items-center justify-between">
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          {icon}
+          <span className="text-sm text-text-muted font-medium">{label}</span>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <h3 className="text-2xl font-bold text-white">{value}</h3>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="text-xs text-emerald-400 font-medium bg-emerald-500/10 px-2 py-1 rounded-lg inline-block">
+          {subtext}
+        </p>
+      </div>
+    </div>
+  )
+}
 
 export default DriverDashboard;
