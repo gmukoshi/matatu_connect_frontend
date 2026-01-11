@@ -2,13 +2,15 @@ import React, { useState, useMemo, useEffect } from "react";
 import LiveMap from "../components/map/LiveMap";
 import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
-import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle } from "lucide-react";
+import { useSocket } from "../context/SocketContext";
+import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle, Bell } from "lucide-react";
 import { acceptVehicle, rejectVehicle, fetchMatatus } from "../api/matatus";
 import { fetchBookings, updateBookingStatus } from "../api/bookings";
 
 const DriverDashboard = () => {
   const { vehicles, setVehicles } = useApp();
   const { user, logout } = useAuth();
+  const socket = useSocket();
   const [online, setOnline] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookings, setBookings] = useState([]);
@@ -22,8 +24,23 @@ const DriverDashboard = () => {
   useEffect(() => {
     if (myVehicle && myVehicle.assignment_status === 'active') {
       loadBookings();
+
+      if (socket) {
+        socket.emit("join_matatu", { matatu_id: myVehicle.id });
+
+        socket.on("new_booking", (newBooking) => {
+          console.log("New booking received:", newBooking);
+          // Play notification sound if desired
+          setBookings(prev => [newBooking, ...prev]);
+          alert(`New booking from ${newBooking.user_name}!`);
+        });
+
+        return () => {
+          socket.off("new_booking");
+        };
+      }
     }
-  }, [myVehicle]);
+  }, [myVehicle, socket]);
 
   const loadBookings = async () => {
     try {
@@ -221,59 +238,105 @@ const DriverDashboard = () => {
       {/* BOTTOM GRID */}
       <div className="grid lg:grid-cols-2 gap-8">
 
-        {/* UPCOMING PICKUPS */}
-        <div className="bg-surface-dark rounded-3xl p-6 border border-white/5">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-white">Upcoming Pickups</h3>
-            <button className="text-emerald-400 text-sm font-semibold hover:underline">View All</button>
-          </div>
-
-          <div className="space-y-1">
-            {upcomingPickups.map((pickup, idx) => (
-              <div key={pickup.id} className={`p-4 rounded-2xl transition-all ${pickup.type === "next"
-                ? "bg-emerald-500/10 border border-emerald-500/20 mb-4"
-                : "hover:bg-white/5 border border-transparent"
-                }`}>
-                {pickup.type === "next" && (
-                  <div className="flex justify-between items-center mb-3 text-[10px] font-bold uppercase tracking-wider">
-                    <span className="text-emerald-400">Next Stop</span>
-                    <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">{pickup.time} away</span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <img src={pickup.avatar} alt={pickup.name} className="w-10 h-10 rounded-full object-cover border-2 border-surface" />
+        {/* COLUMN 1: Pending & Upcoming */}
+        <div className="space-y-6">
+          {/* PENDING BOOKINGS */}
+          {bookings.filter(b => b.status === 'pending').length > 0 && (
+            <div className="bg-surface-dark rounded-3xl p-6 border border-yellow-500/20 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-yellow-500 animate-pulse" />
+                  New Requests
+                </h3>
+                <span className="bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded text-xs font-bold">
+                  {bookings.filter(b => b.status === 'pending').length} Pending
+                </span>
+              </div>
+              <div className="space-y-3">
+                {bookings.filter(b => b.status === 'pending').map(booking => (
+                  <div key={booking.id} className="bg-white/5 p-4 rounded-xl border border-white/10 flex items-center justify-between">
                     <div>
-                      <p className="font-bold text-white text-sm">{pickup.name}</p>
-                      <div className="flex items-center gap-1 text-xs text-text-muted mt-0.5">
-                        <MapPin className="w-3 h-3" />
-                        {pickup.location}
-                      </div>
+                      <p className="font-bold text-white">{booking.user_name}</p>
+                      <p className="text-xs text-text-muted">Seat: {booking.seat_number} • {booking.payment_status}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleBookingAction(booking.id, 'reject')}
+                        className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
+                        title="Reject"
+                      >
+                        <XCircle className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleBookingAction(booking.id, 'accept')}
+                        className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-colors"
+                        title="Accept"
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
-
-                  {pickup.type === "next" ? (
-                    <button className="bg-emerald-500 text-black px-4 py-1.5 rounded-full text-xs font-bold hover:bg-emerald-400 transition-colors">
-                      Arrived
-                    </button>
-                  ) : (
-                    <span className="text-xs font-medium text-text-muted">{pickup.time}</span>
-                  )}
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
+          )}
+
+          {/* UPCOMING PICKUPS */}
+          <div className="bg-surface-dark rounded-3xl p-6 border border-white/5">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-white">Upcoming Pickups</h3>
+              <button className="text-emerald-400 text-sm font-semibold hover:underline">View All</button>
+            </div>
+
+            <div className="space-y-1">
+              {upcomingPickups.map((pickup, idx) => (
+                <div key={pickup.id} className={`p-4 rounded-2xl transition-all ${pickup.type === "next"
+                  ? "bg-emerald-500/10 border border-emerald-500/20 mb-4"
+                  : "hover:bg-white/5 border border-transparent"
+                  }`}>
+                  {pickup.type === "next" && (
+                    <div className="flex justify-between items-center mb-3 text-[10px] font-bold uppercase tracking-wider">
+                      <span className="text-emerald-400">Next Stop</span>
+                      <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">{pickup.time} away</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <img src={pickup.avatar} alt={pickup.name} className="w-10 h-10 rounded-full object-cover border-2 border-surface" />
+                      <div>
+                        <p className="font-bold text-white text-sm">{pickup.name}</p>
+                        <div className="flex items-center gap-1 text-xs text-text-muted mt-0.5">
+                          <MapPin className="w-3 h-3" />
+                          {pickup.location}
+                        </div>
+                      </div>
+                    </div>
+
+                    {pickup.type === "next" ? (
+                      <button className="bg-emerald-500 text-black px-4 py-1.5 rounded-full text-xs font-bold hover:bg-emerald-400 transition-colors">
+                        Arrived
+                      </button>
+                    ) : (
+                      <span className="text-xs font-medium text-text-muted">{pickup.time}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+        {/* END COLUMN 1 */}
 
-        {/* SEAT LAYOUT & ROUTE PREVIEW */}
-        <div className="grid lg:grid-cols-2 gap-8">
+        {/* COLUMN 2: SEAT LAYOUT & ROUTE PREVIEW */}
+        <div className="space-y-6"> {/* This div now correctly represents the second column */}
           {/* SEAT LAYOUT */}
           <div className="bg-surface-dark rounded-3xl p-6 border border-white/5 flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-white">Seat Layout</h3>
               <div className="flex items-center gap-2 text-xs">
-                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-red-500/20 border border-red-500/50"></div> Booked</span>
+                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-red-500/20 border border-red-500/50"></div> Occupied</span>
+                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-yellow-500/20 border border-yellow-500/50"></div> Pending</span>
                 <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-white/5 border border-white/10"></div> Available</span>
               </div>
             </div>
@@ -290,18 +353,30 @@ const DriverDashboard = () => {
               <div className="grid grid-cols-4 gap-4 w-full max-w-xs">
                 {Array.from({ length: myVehicle?.capacity || 14 }).map((_, i) => {
                   const seatNum = (i + 1).toString();
-                  const isBooked = bookings.some(b => b.seat_number === seatNum);
+                  // Find active booking for this seat (excluding rejected)
+                  const booking = bookings.find(b => String(b.seat_number) === seatNum && b.status !== 'rejected');
+
+                  // Debug for seat 1
+                  if (i === 0) {
+                    console.log("Seat 1 Debug:", { seatNum, foundBooking: booking, allBookings: bookings });
+                  }
+
+                  const isConfirmed = booking?.status === 'confirmed';
+                  const isPending = booking?.status === 'pending';
 
                   return (
                     <div
                       key={i}
                       className={`
                                         aspect-square rounded-lg flex items-center justify-center text-sm font-bold border transition-all
-                                        ${isBooked
-                          ? "bg-red-500/20 border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]"
-                          : "bg-white/5 border-white/10 text-text-muted hover:bg-white/10 hover:border-white/20"
+                                        ${isConfirmed
+                          ? "bg-red-500/20 border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]" // Occupied
+                          : isPending
+                            ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-400 animate-pulse" // Pending Request
+                            : "bg-white/5 border-white/10 text-text-muted hover:bg-white/10 hover:border-white/20" // Available
                         }
                                     `}
+                      title={booking ? `${booking.user_name} (${booking.status})` : "Available"}
                     >
                       {seatNum}
                     </div>
@@ -310,7 +385,7 @@ const DriverDashboard = () => {
               </div>
               <div className="mt-6 text-center">
                 <p className="text-sm text-text-muted">
-                  <span className="text-white font-bold">{bookings.length}</span> / {myVehicle?.capacity || 14} Seats Occupied
+                  <span className="text-white font-bold">{bookings.filter(b => b.status === 'confirmed').length}</span> / {myVehicle?.capacity || 14} Seats Occupied
                 </p>
               </div>
             </div>
@@ -348,7 +423,9 @@ const DriverDashboard = () => {
             </div>
           </div>
         </div>
-      </div>
+        {/* END COLUMN 2 */}
+
+      </div>{/* End Bottom Grid */}
     </div>
   );
 };

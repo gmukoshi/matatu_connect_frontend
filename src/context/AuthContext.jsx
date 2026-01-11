@@ -41,18 +41,15 @@ export const AuthProvider = ({ children }) => {
   const signup = async (data) => {
     try {
       const response = await registerUser(data);
-      // Check if response contains user data directly or if we need to login after
-      // Based on auth.py: returns {message, user}
-      // We might not get a token immediately on register unless we modify backend to return it.
-      // For now, let's assume we might need to login or we just redirect.
-      // But to keep consistency with "login" state:
-      if (response.user) {
-        // We don't have a token here based on the backend code seen (only returns message & user)
-        // So the user stays logged out until they sign in OR we auto-login manually.
-        // For better UX, usually we auto-login.
-        // But since backend register doesn't return token, we can't set "access_token".
-        // Ideally backend should return token on register.
-        // For now, let's just return success and let the component navigate.
+
+      // Auto-login if token is present
+      if (response.access_token && response.user) {
+        localStorage.setItem("mc_user", JSON.stringify(response.user));
+        localStorage.setItem("access_token", response.access_token);
+        setUser(response.user);
+        return response.user;
+      } else if (response.user) {
+        // Fallback if backend doesn't return token (shouldn't happen with recent fix)
         return response.user;
       }
     } catch (error) {
