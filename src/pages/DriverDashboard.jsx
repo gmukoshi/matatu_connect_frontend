@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
 import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle } from "lucide-react";
 import { acceptVehicle, rejectVehicle, fetchMatatus } from "../api/matatus";
-import { fetchBookings } from "../api/bookings";
+import { fetchBookings, updateBookingStatus } from "../api/bookings";
 
 const DriverDashboard = () => {
   const { vehicles, setVehicles } = useApp();
@@ -64,6 +64,20 @@ const DriverDashboard = () => {
       alert("Failed to reject");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleBookingAction = async (id, action) => {
+    try {
+      await updateBookingStatus(id, action);
+      // Optimistic update or reload
+      setBookings(prev => prev.map(b =>
+        b.id === id ? { ...b, status: action === 'accept' ? 'confirmed' : 'rejected' } : b
+      ));
+      // alert(`Booking ${action}ed`);
+    } catch (err) {
+      console.error(`Failed to ${action} booking`, err);
+      alert(`Failed to ${action} booking`);
     }
   };
 
@@ -252,33 +266,84 @@ const DriverDashboard = () => {
           </div>
         </div>
 
-        {/* MAP / ROUTE PREVIEW */}
-        <div className="bg-surface-dark rounded-3xl p-6 border border-white/5 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-white">Route Preview</h3>
-            <div className="flex gap-2">
-              <button className="p-2 bg-white/5 rounded-lg hover:bg-white/10 text-white"><Search className="w-4 h-4" /></button>
+        {/* SEAT LAYOUT & ROUTE PREVIEW */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* SEAT LAYOUT */}
+          <div className="bg-surface-dark rounded-3xl p-6 border border-white/5 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-white">Seat Layout</h3>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-red-500/20 border border-red-500/50"></div> Booked</span>
+                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-white/5 border border-white/10"></div> Available</span>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col items-center justify-center p-4 bg-black/20 rounded-2xl border border-white/5">
+              {/* Driver Seat Row */}
+              <div className="w-full flex justify-end mb-8 border-b border-dashed border-white/10 pb-4">
+                <div className="w-12 h-12 rounded-lg border-2 border-emerald-500/50 bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                  <Users className="w-5 h-5" />
+                </div>
+              </div>
+
+              {/* Passenger Seats Grid */}
+              <div className="grid grid-cols-4 gap-4 w-full max-w-xs">
+                {Array.from({ length: myVehicle?.capacity || 14 }).map((_, i) => {
+                  const seatNum = (i + 1).toString();
+                  const isBooked = bookings.some(b => b.seat_number === seatNum);
+
+                  return (
+                    <div
+                      key={i}
+                      className={`
+                                        aspect-square rounded-lg flex items-center justify-center text-sm font-bold border transition-all
+                                        ${isBooked
+                          ? "bg-red-500/20 border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                          : "bg-white/5 border-white/10 text-text-muted hover:bg-white/10 hover:border-white/20"
+                        }
+                                    `}
+                    >
+                      {seatNum}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-6 text-center">
+                <p className="text-sm text-text-muted">
+                  <span className="text-white font-bold">{bookings.length}</span> / {myVehicle?.capacity || 14} Seats Occupied
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="flex-1 relative rounded-2xl overflow-hidden min-h-[300px]">
-            {/* Map Component */}
-            {myVehicle ? (
-              <LiveMap vehicles={[myVehicle]} centerVehicle={myVehicle} />
-            ) : (
-              <div className="flex items-center justify-center h-full text-text-muted">
-                <p>No active vehicle assigned to track.</p>
+          {/* MAP / ROUTE PREVIEW */}
+          <div className="bg-surface-dark rounded-3xl p-6 border border-white/5 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-white">Route Preview</h3>
+              <div className="flex gap-2">
+                <button className="p-2 bg-white/5 rounded-lg hover:bg-white/10 text-white"><Search className="w-4 h-4" /></button>
               </div>
-            )}
+            </div>
 
-            {/* Traffic Overlay */}
-            <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md rounded-xl p-3 border border-white/10 flex items-start gap-3">
-              <div className="p-2 bg-yellow-500/20 rounded-lg text-yellow-500">
-                <Navigation className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white">Heavy Traffic</p>
-                <p className="text-xs text-text-muted mt-0.5">Expected delay: +5 mins on Waiyaki Way</p>
+            <div className="flex-1 relative rounded-2xl overflow-hidden min-h-[300px]">
+              {/* Map Component */}
+              {myVehicle ? (
+                <LiveMap vehicles={[myVehicle]} centerVehicle={myVehicle} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-text-muted">
+                  <p>No active vehicle assigned to track.</p>
+                </div>
+              )}
+
+              {/* Traffic Overlay */}
+              <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md rounded-xl p-3 border border-white/10 flex items-start gap-3">
+                <div className="p-2 bg-yellow-500/20 rounded-lg text-yellow-500">
+                  <Navigation className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Heavy Traffic</p>
+                  <p className="text-xs text-text-muted mt-0.5">Expected delay: +5 mins on Waiyaki Way</p>
+                </div>
               </div>
             </div>
           </div>
