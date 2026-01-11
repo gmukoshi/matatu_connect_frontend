@@ -1,10 +1,12 @@
-import { fetchMatatus } from "../api/matatus"; // Moved to top
+import { fetchMatatus } from "../api/matatus";
+import { fetchRoutes } from "../api/routes";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [vehicles, setVehicles] = useState([]);
+  const [routes, setRoutes] = useState([]);
   const [bookingRequests, setBookingRequests] = useState([
     {
       id: 1,
@@ -82,28 +84,47 @@ export const AppProvider = ({ children }) => {
 
 
   useEffect(() => {
-    const loadVehicles = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetchMatatus();
-        const apiVehicles = response.data.data || [];
+        // 1. Fetch Routes first
+        let currentRoutes = [];
+        try {
+          const routesRes = await fetchRoutes();
+          currentRoutes = routesRes.data.data || [];
+          setRoutes(currentRoutes);
+        } catch (err) {
+          console.error("Failed to fetch routes:", err);
+        }
 
-        // Transform API data to match frontend structure if needed
-        // Backend returns: { id, plate_number, driver (name), latitude, longitude, ... }
-        // Frontend expects: { id, name, driverName, lat, lng, ... }
-        const mappedVehicles = apiVehicles.map(v => ({
-          id: v.id,
-          name: v.plate_number, // Use plate as name
-          driverName: v.driver,
-          driverId: v.driver_id, // Ensure this exists if backend sends it. Wait, backend to_dict sends 'driver' name, not ID.
-          // We might need driver ID for DriverDashboard filtering: "v.driverId === driverId"
-          // Let's check backend to_dict again. It sends 'driver' (name). It does NOT send driver_id explicitly in to_dict Step 353.
-          // I should update backend to send driver_id too.
-          lat: v.latitude || -1.2921,
-          lng: v.longitude || 36.8219,
-          status: "available",
-          passengerCapacity: v.capacity,
-          rating: 4.5
-        }));
+        // 2. Fetch Vehicles
+        const vehiclesRes = await fetchMatatus();
+        const apiVehicles = vehiclesRes.data || [];
+
+        // 3. Map Vehicles with Route info
+        const mappedVehicles = apiVehicles.map(v => {
+          // Find matching route
+          const matchedRoute = currentRoutes.find(r => r.id === v.route_id);
+
+          return {
+            id: v.id,
+            name: v.plate_number,
+            driverName: v.driver,
+            driverId: v.driver_id,
+            // Map route name from matched route, or use fallback
+            routeName: matchedRoute ? matchedRoute.name : (v.route_id ? `Route ${v.route_id}` : "Unassigned"),
+            route: matchedRoute ? [
+              // Mock route coordinates for now if backend doesn't provide waypoints
+              { lat: v.latitude || -1.2921, lng: v.longitude || 36.8219 },
+              { lat: (v.latitude || -1.2921) + 0.01, lng: (v.longitude || 36.8219) + 0.01 }
+            ] : null,
+            lat: v.latitude || -1.2921,
+            lng: v.longitude || 36.8219,
+            status: "available",
+            passengerCapacity: v.capacity,
+            rating: 4.5, // Mock rating
+            _posIndex: 0
+          };
+        });
 
         if (mappedVehicles.length > 0) {
           setVehicles(mappedVehicles);
@@ -112,12 +133,12 @@ export const AppProvider = ({ children }) => {
           setVehicles(fallbackVehicles);
         }
       } catch (err) {
-        console.error("Failed to fetch vehicles:", err);
+        console.error("Failed to fetch data:", err);
         setVehicles(fallbackVehicles);
       }
     };
 
-    loadVehicles();
+    loadData();
 
     // Animation interval (optional, keeps existing logic for fallbacks, but for real static data it will just stay put)
     const interval = setInterval(() => {
@@ -145,7 +166,7 @@ export const AppProvider = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ vehicles, bookingRequests, respondToBooking }}>
+    <AppContext.Provider value={{ vehicles, routes, bookingRequests, respondToBooking }}>
       {children}
     </AppContext.Provider>
   );

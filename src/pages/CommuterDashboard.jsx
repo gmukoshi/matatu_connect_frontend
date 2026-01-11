@@ -4,9 +4,10 @@ import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
 import SeatSelector from "../components/seats/SeatSelector";
 import { LogOut } from "lucide-react";
+import { createBooking } from "../api/bookings";
 
 const CommuterDashboard = () => {
-  const { vehicles, bookingRequests } = useApp();
+  const { vehicles, routes, bookingRequests } = useApp();
   const { user, logout } = useAuth(); // Get user and logout function
   const [routeFilter, setRouteFilter] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -77,65 +78,116 @@ const CommuterDashboard = () => {
       </div>
 
       {/* VEHICLE LIST */}
-      <div className="grid md:grid-cols-3 gap-6 mb-10">
-        {filteredVehicles.map((v) => (
-          <button
-            key={v.id}
-            onClick={() => setSelectedVehicle(v)}
-            className={`p-4 rounded-2xl border transition text-left relative overflow-hidden group
+      <div className="mb-10">
+        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          Available Drivers & Vehicles
+          <span className="text-sm font-normal text-text-muted bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+            {filteredVehicles.length} Active
+          </span>
+        </h3>
+        <div className="grid md:grid-cols-3 gap-6">
+          {filteredVehicles.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => setSelectedVehicle(v)}
+              className={`p-4 rounded-2xl border transition text-left relative overflow-hidden group
               ${selectedVehicle?.id === v.id
-                ? "border-primary bg-primary/10"
-                : "border-white/10 bg-surface-dark hover:bg-white/5"
-              }
+                  ? "border-primary bg-primary/10"
+                  : "border-white/10 bg-surface-dark hover:bg-white/5"
+                }
             `}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="font-bold text-white text-lg">{v.name}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/5">
-                    {v.routeName || "Unknown route"}
-                  </span>
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="font-bold text-white text-lg">{v.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/5">
+                      {v.routeName || "Unknown route"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Driver Image */}
+                <div className="relative">
+                  <img
+                    src={v.driverImage || `https://ui-avatars.com/api/?name=${v.driverName}&background=random`}
+                    alt={v.driverName}
+                    className="w-10 h-10 rounded-full border-2 border-surface object-cover shadow-sm"
+                  />
+                  <div className="absolute -bottom-1 -right-1 bg-surface-dark rounded-full px-1 py-0.5 border border-white/10 flex items-center gap-0.5">
+                    <svg className="w-2.5 h-2.5 text-yellow-500 fill-current" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    <span className="text-[10px] font-bold text-white">{v.rating || "4.5"}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Driver Image */}
-              <div className="relative">
-                <img
-                  src={v.driverImage || `https://ui-avatars.com/api/?name=${v.driverName}&background=random`}
-                  alt={v.driverName}
-                  className="w-10 h-10 rounded-full border-2 border-surface object-cover shadow-sm"
-                />
-                <div className="absolute -bottom-1 -right-1 bg-surface-dark rounded-full px-1 py-0.5 border border-white/10 flex items-center gap-0.5">
-                  <svg className="w-2.5 h-2.5 text-yellow-500 fill-current" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span className="text-[10px] font-bold text-white">{v.rating || "4.5"}</span>
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-xs text-text-muted">
+                  Driver: <span className="text-slate-300">{v.driverName || "Unknown"}</span>
                 </div>
+                <p className="text-xs font-semibold text-primary group-hover:underline">
+                  Select Vehicle →
+                </p>
               </div>
-            </div>
+            </button>
+          ))}
+        </div>
+      </div>
 
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-xs text-text-muted">
-                Driver: <span className="text-slate-300">{v.driverName || "Unknown"}</span>
+      {/* ALL ROUTES */}
+      <div className="mb-10">
+        <h3 className="text-xl font-bold text-white mb-4">All Routes</h3>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {routes.map((route) => (
+            <div key={route.id} className="p-4 bg-surface-dark rounded-xl border border-white/10 hover:border-emerald-500/30 transition-all">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">Route {route.id}</p>
+                  <p className="font-bold text-white text-lg">{route.origin} → {route.destination}</p>
+                </div>
+                <span className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-lg text-xs font-bold">
+                  KES {route.fare}
+                </span>
               </div>
-              <p className="text-xs font-semibold text-primary group-hover:underline">
-                Select Vehicle →
-              </p>
+              <div className="flex items-center gap-4 text-xs text-text-muted mt-3 pt-3 border-t border-white/5">
+                <span className="flex items-center gap-1">⏱️ {route.estimated_duration || '45 mins'}</span>
+                <span className="flex items-center gap-1">📏 {route.distance || '15 km'}</span>
+              </div>
             </div>
-          </button>
-        ))}
+          ))}
+          {routes.length === 0 && (
+            <div className="col-span-full text-center py-8 text-text-muted italic">
+              No routes found.
+            </div>
+          )}
+        </div>
       </div>
 
       {/* SEAT SELECTION */}
       {selectedVehicle && (
         <SeatSelector
-          totalSeats={selectedVehicle.totalSeats || 14}
+          totalSeats={selectedVehicle.passengerCapacity || 14} // Use backend field name if varying
           bookedSeats={selectedVehicle.bookedSeats || [2, 5, 7]}
-          onConfirm={(seats) => {
-            alert(
-              `Seats ${seats.join(", ")} booked on ${selectedVehicle.name}`
-            );
+          onConfirm={async (seats) => {
+            try {
+              // Assuming single seat booking for simplicity or iterate if backend requires one by one
+              // Backend 'createBooking' takes: { matatu_id, seat_number }
+              for (const seat of seats) {
+                await createBooking({
+                  matatu_id: selectedVehicle.id,
+                  seat_number: seat
+                });
+              }
+              alert(`Successfully booked seat(s) ${seats.join(", ")} on ${selectedVehicle.name}`);
+              setSelectedVehicle(null); // Close modal
+              // Ideally refresh data here
+            } catch (err) {
+              console.error("Booking failed", err);
+              const msg = err.response?.data?.error || err.response?.data?.message || "Failed to book seat. Please try again.";
+              alert(msg);
+            }
           }}
         />
       )}

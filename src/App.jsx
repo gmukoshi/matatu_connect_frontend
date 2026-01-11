@@ -176,10 +176,14 @@ function AppRoutes() {
   );
 }
 
+import { SocketProvider } from "./context/SocketContext";
+
 function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <SocketProvider>
+        <AppRoutes />
+      </SocketProvider>
     </AuthProvider>
   );
 }
