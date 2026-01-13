@@ -10,12 +10,23 @@ export default function ManagerSignup() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    saccoName: "",
+    saccoName: "", // Keeping for compat, but using sacco_id
     email: "",
     workEmail: "",
     password: "",
     agree: false
   });
+
+  const [saccos, setSaccos] = useState([]);
+
+  useState(() => {
+    fetch("/api/saccos")
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") setSaccos(data.data);
+      })
+      .catch(err => console.error("Error fetching Saccos:", err));
+  }, []);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,7 +47,9 @@ export default function ManagerSignup() {
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
         password: formData.password,
-        role: "sacco_manager"
+        role: "sacco_manager",
+        sacco_id: isNewSacco ? null : formData.sacco_id,
+        sacco_name: isNewSacco ? formData.saccoName : null
       };
       await signup(payload);
       navigate("/dashboard-overview");
@@ -51,6 +64,18 @@ export default function ManagerSignup() {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
     const name = e.target.name;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const [isNewSacco, setIsNewSacco] = useState(false);
+  const handleSaccoChange = (e) => {
+    const val = e.target.value;
+    if (val === "new") {
+      setIsNewSacco(true);
+      setFormData(prev => ({ ...prev, sacco_id: "" }));
+    } else {
+      setIsNewSacco(false);
+      setFormData(prev => ({ ...prev, sacco_id: val, saccoName: "" }));
+    }
   };
 
   return (
@@ -158,15 +183,33 @@ export default function ManagerSignup() {
             </div>
 
             <div>
-              <label className="mc-label">SACCO Name / Fleet ID</label>
-              <input
-                name="saccoName"
-                value={formData.saccoName}
-                onChange={handleChange}
-                placeholder="Super Metro"
-                className="mc-input"
-              />
+              <label className="mc-label">Select Your Sacco</label>
+              <select
+                name="sacco_id"
+                value={isNewSacco ? "new" : (formData.sacco_id || "")}
+                onChange={handleSaccoChange}
+                className="mc-input appearance-none bg-black/20"
+              >
+                <option value="">-- Choose Sacco --</option>
+                {saccos.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+                <option value="new" className="text-emerald-400 font-bold">+ Register New Sacco</option>
+              </select>
             </div>
+
+            {isNewSacco && (
+              <div>
+                <label className="mc-label">New Sacco Name</label>
+                <input
+                  name="saccoName"
+                  value={formData.saccoName}
+                  onChange={handleChange}
+                  placeholder="Enter Sacco Name"
+                  className="mc-input border-emerald-500/50 bg-emerald-500/10"
+                />
+              </div>
+            )}
 
             <div>
               <label className="mc-label">Email</label>

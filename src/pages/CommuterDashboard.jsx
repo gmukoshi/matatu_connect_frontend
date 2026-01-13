@@ -3,8 +3,10 @@ import React, { useState, useMemo, useEffect } from "react";
 import LiveMap from "../components/map/LiveMap";
 import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
+import { useSocket } from "../context/SocketContext"; // Added Socket Context
 import SeatSelector from "../components/seats/SeatSelector";
-import { LogOut, Calendar, MapPin, Armchair, CreditCard } from "lucide-react";
+import ReceiptModal from "../components/payment/ReceiptModal"; // Added Receipt Modal
+import { LogOut, Calendar, MapPin, Armchair, CreditCard, CheckCircle } from "lucide-react";
 import { createBooking, fetchBookings } from "../api/bookings";
 
 const CommuterDashboard = () => {
@@ -17,9 +19,34 @@ const CommuterDashboard = () => {
   const [myBookings, setMyBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
 
+  // Receipt State
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [currentReceipt, setCurrentReceipt] = useState(null);
+
+  const socket = useSocket();
+
   useEffect(() => {
     loadBookings();
-  }, []);
+
+    if (socket && user) {
+      // Authenticate socket user room
+      console.log("Joined User Room:", user.id);
+      socket.emit("join_user", { user_id: user.id });
+
+      const handlePayment = (data) => {
+        console.log("Payment Received:", data);
+        setCurrentReceipt(data);
+        setShowReceipt(true);
+        loadBookings(); // Refresh list to show 'Paid' status
+      };
+
+      socket.on("payment_received", handlePayment);
+
+      return () => {
+        socket.off("payment_received", handlePayment);
+      };
+    }
+  }, [socket, user]);
 
   const loadBookings = async () => {
     try {
@@ -230,8 +257,8 @@ const CommuterDashboard = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
             {myBookings.map((booking) => (
               <div key={booking.id} className={`mc-card p-5 group transition-all flex flex-col gap-3 ${booking.status === 'rejected' ? 'border-red-500/30 bg-red-500/5' :
-                  booking.status === 'confirmed' ? 'border-emerald-500/20' :
-                    'hover:border-emerald-500/30'
+                booking.status === 'confirmed' ? 'border-emerald-500/20' :
+                  'hover:border-emerald-500/30'
                 }`}>
                 <div className="flex justify-between items-start">
                   <div>
@@ -239,9 +266,9 @@ const CommuterDashboard = () => {
                     <p className="text-xs text-text-muted">{booking.matatu?.route || "Route Info Unavailable"}</p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${booking.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                      booking.status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse' :
-                        booking.status === 'completed' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                          'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30'
+                    booking.status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse' :
+                      booking.status === 'completed' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                        'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30'
                     }`}>
                     {booking.status}
                   </span>
@@ -276,6 +303,25 @@ const CommuterDashboard = () => {
                     <span>{booking.payment_status === 'completed' ? 'Paid' : 'Unpaid'} ({booking.payment_amount}/=)</span>
                   </div>
                 </div>
+
+                {/* Proof of Payment Button */}
+                {booking.payment_status === 'completed' && (
+                  <button
+                    onClick={() => {
+                      const receipt = {
+                        amount: booking.payment_amount,
+                        date: booking.booking_date, // Or payment date if available
+                        reference: `BK-${booking.id}`, // Fallback if ref is missing
+                        booking_id: booking.id
+                      };
+                      setCurrentReceipt(receipt);
+                      setShowReceipt(true);
+                    }}
+                    className="mt-3 w-full py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <CheckCircle size={16} /> View Receipt
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -286,6 +332,14 @@ const CommuterDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* RECEIPT MODAL */}
+      {showReceipt && currentReceipt && (
+        <ReceiptModal
+          payment={currentReceipt}
+          onClose={() => setShowReceipt(false)}
+        />
+      )}
     </>
   );
 };

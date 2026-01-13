@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchMatatuBookings } from "../../api/bookings";
+import { useSocket } from "../../context/SocketContext";
 import { Armchair } from "lucide-react";
 
 const SeatSelector = ({ totalSeats = 14, matatuId, onConfirm }) => {
@@ -8,11 +9,49 @@ const SeatSelector = ({ totalSeats = 14, matatuId, onConfirm }) => {
   const [pendingSeats, setPendingSeats] = useState([]); // pending bookings
   const [loading, setLoading] = useState(true);
 
+  /* SOCKET LOGIC START */
+  const socket = useSocket();
+
   useEffect(() => {
     if (matatuId) {
       loadSeatStatus();
+
+      if (socket) {
+        socket.emit("join_matatu", { matatu_id: matatuId });
+
+        const handleNewBooking = (newBooking) => {
+          // Add to pending immediately
+          const seat = parseInt(newBooking.seat_number);
+          setPendingSeats(prev => [...prev.filter(s => s !== seat), seat]);
+        };
+
+        const handleBookingUpdate = (updatedBooking) => {
+          const seat = parseInt(updatedBooking.seat_number);
+          const status = updatedBooking.status;
+
+          // Remove from all lists first
+          setOccupiedSeats(prev => prev.filter(s => s !== seat));
+          setPendingSeats(prev => prev.filter(s => s !== seat));
+
+          if (status === 'confirmed') {
+            setOccupiedSeats(prev => [...prev, seat]);
+          } else if (status === 'pending') {
+            setPendingSeats(prev => [...prev, seat]);
+          }
+          // If rejected/cancelled, it remains removed (available)
+        };
+
+        socket.on("new_booking", handleNewBooking);
+        socket.on("booking_updated", handleBookingUpdate);
+
+        return () => {
+          socket.off("new_booking", handleNewBooking);
+          socket.off("booking_updated", handleBookingUpdate);
+        };
+      }
     }
-  }, [matatuId]);
+  }, [matatuId, socket]);
+  /* SOCKET LOGIC END */
 
   const loadSeatStatus = async () => {
     try {
@@ -21,12 +60,13 @@ const SeatSelector = ({ totalSeats = 14, matatuId, onConfirm }) => {
       const bookings = res.data?.data || res.data || [];
 
       // Separate confirmed and pending bookings
+      // TYPE FIX: Ensure seat numbers are integers
       const confirmed = bookings
         .filter(b => b.status === 'confirmed')
-        .map(b => b.seat_number);
+        .map(b => parseInt(b.seat_number));
       const pending = bookings
         .filter(b => b.status === 'pending')
-        .map(b => b.seat_number);
+        .map(b => parseInt(b.seat_number));
 
       setOccupiedSeats(confirmed);
       setPendingSeats(pending);

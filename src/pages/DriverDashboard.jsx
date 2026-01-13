@@ -3,11 +3,13 @@ import LiveMap from "../components/map/LiveMap";
 import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
 import { useSocket } from "../context/SocketContext";
-import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle, Bell, CreditCard } from "lucide-react";
+import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle, Bell, CreditCard, TrendingUp } from "lucide-react";
 import { acceptVehicle, rejectVehicle, fetchMatatus } from "../api/matatus";
 import { fetchBookings, updateBookingStatus } from "../api/bookings";
 import { triggerStkPush } from "../api/payment";
+
 import { submitDriverLog } from "../api/logs";
+import { fetchNotifications, markNotificationRead } from "../api/notifications";
 
 const DriverDashboard = () => {
   const { vehicles, setVehicles } = useApp();
@@ -26,7 +28,32 @@ const DriverDashboard = () => {
   // Log Modal State
   const [showLogModal, setShowLogModal] = useState(false);
   const [logForm, setLogForm] = useState({ passengers: "", fuel: "", mileage: "" });
+
   const [isSubmittingLog, setIsSubmittingLog] = useState(false);
+
+  // Notifications
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const loadNotifications = async () => {
+    try {
+      const res = await fetchNotifications();
+      setNotifications(res.data.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRead = async (id) => {
+    try {
+      await markNotificationRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch (err) { console.error(err); }
+  };
 
   // Find vehicle assigned to this driver
   const myVehicle = useMemo(() => {
@@ -39,6 +66,7 @@ const DriverDashboard = () => {
       loadBookings();
 
       if (socket) {
+        console.log("Attempting to join Matatu Room:", myVehicle.id);
         socket.emit("join_matatu", { matatu_id: myVehicle.id });
 
         socket.on("new_booking", (newBooking) => {
@@ -48,8 +76,14 @@ const DriverDashboard = () => {
           alert(`New booking from ${newBooking.user_name}!`);
         });
 
+        socket.on("booking_updated", (updatedBooking) => {
+          console.log("Booking updated PAYLOAD:", updatedBooking);
+          setBookings(prev => prev.map(b => b.id === updatedBooking.id ? updatedBooking : b));
+        });
+
         return () => {
           socket.off("new_booking");
+          socket.off("booking_updated");
         };
       }
     }
@@ -236,6 +270,46 @@ const DriverDashboard = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Notifications */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="p-2 rounded-full bg-surface border border-white/10 text-white hover:bg-white/10 relative"
+            >
+              <Bell size={20} />
+              {notifications.filter(n => !n.is_read).length > 0 && (
+                <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-surface-dark"></span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-surface-dark border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="p-3 border-b border-white/10 flex justify-between items-center">
+                  <h4 className="font-bold text-white">Notifications</h4>
+                  <span className="text-xs text-text-muted">{notifications.filter(n => !n.is_read).length} new</span>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <p className="p-4 text-sm text-text-muted text-center">No notifications</p>
+                  ) : (
+                    notifications.map(note => (
+                      <div
+                        key={note.id}
+                        className={`p-3 border-b border-white/5 hover:bg-white/5 cursor-pointer ${!note.is_read ? 'bg-emerald-500/5' : ''}`}
+                        onClick={() => handleRead(note.id)}
+                      >
+                        <p className={`text-sm ${!note.is_read ? 'text-white font-bold' : 'text-text-muted'}`}>
+                          {note.message}
+                        </p>
+                        <p className="text-[10px] text-text-muted mt-1">{new Date(note.created_at).toLocaleString()}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Online Toggle */}
           <div className={`
             flex items-center gap-3 px-4 py-2 rounded-full border transition-all cursor-pointer
@@ -403,7 +477,7 @@ const DriverDashboard = () => {
                           <p className="font-bold text-white text-sm">{pickup.name}</p>
                           {pickup.status && (
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${pickup.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' :
-                                'bg-yellow-500/20 text-yellow-500'
+                              'bg-yellow-500/20 text-yellow-500'
                               }`}>
                               {pickup.status}
                             </span>

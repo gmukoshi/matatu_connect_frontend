@@ -18,8 +18,7 @@ export default function FleetPage() {
         plate_number: "",
         capacity: 14,
         route_id: "",
-        driver_id: "",
-        sacco_id: 1
+        driver_id: ""
     });
 
     useEffect(() => {
