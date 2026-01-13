@@ -5,7 +5,7 @@ import MatatuMarker from "./MatatuMarker";
 const containerStyle = { width: "100%", height: "500px" };
 const STEP_MS = 100; // update frequency
 
-const LiveMap = ({ vehicles = [], centerVehicle }) => {
+const LiveMap = ({ vehicles = [], centerVehicle, showRoutes = false }) => {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
@@ -55,8 +55,8 @@ const LiveMap = ({ vehicles = [], centerVehicle }) => {
   const mapCenter = centerVehicle
     ? { lat: centerVehicle.lat, lng: centerVehicle.lng }
     : animatedVehicles.length > 0
-    ? { lat: animatedVehicles[0].lat, lng: animatedVehicles[0].lng }
-    : { lat: -1.2921, lng: 36.8219 };
+      ? { lat: animatedVehicles[0].lat, lng: animatedVehicles[0].lng }
+      : { lat: -1.2921, lng: 36.8219 };
 
   return (
     <GoogleMap mapContainerStyle={containerStyle} center={mapCenter} zoom={12}>
@@ -64,7 +64,7 @@ const LiveMap = ({ vehicles = [], centerVehicle }) => {
         <MatatuMarker key={v.id} vehicle={v} />
       ))}
 
-      {vehicles.map((v) =>
+      {showRoutes && vehicles.map((v) =>
         v.route && v.route.length > 1 ? (
           <Polyline
             key={v.id}

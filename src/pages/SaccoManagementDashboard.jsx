@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import LiveMap from "../components/map/LiveMap";
 import { useAuth } from "../context/AuthContext";
+import { useSocket } from "../context/SocketContext";
 import {
   LogOut,
   MoreHorizontal,
@@ -57,9 +58,82 @@ export default function SaccoManagementDashboard() {
     }
   };
 
+  // Sacco Selection State
+  const [showSaccoModal, setShowSaccoModal] = useState(false);
+  const [saccos, setSaccos] = useState([]);
+  const [selectedSaccoId, setSelectedSaccoId] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+
+  // Fetch Saccos
+  const fetchSaccos = async () => {
+    try {
+      // Direct fetch or via api/saccos.js
+      const response = await fetch("/api/saccos", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+      });
+      const data = await response.json();
+      if (data.status === "success") {
+        setSaccos(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch saccos", err);
+    }
+  };
+
+  const handleJoinSacco = async () => {
+    if (!selectedSaccoId) return;
+    setIsJoining(true);
+    try {
+      const response = await fetch("/api/saccos/assign", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`
+        },
+        body: JSON.stringify({ sacco_id: Number(selectedSaccoId) })
+      });
+      const res = await response.json();
+
+      if (response.ok) {
+        alert(`Successfully joined ${res.data.sacco.name}! Please login again to refresh permissions.`);
+        logout(); // Force re-login to update token/context
+      } else {
+        alert(res.message || "Failed to join Sacco");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error joining Sacco");
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const socket = useSocket();
+
   React.useEffect(() => {
-    loadData();
-  }, []);
+    if (user && !user.sacco_id) {
+      setShowSaccoModal(true);
+      fetchSaccos();
+    } else {
+      loadData();
+    }
+
+    // Socket logic ...
+    if (socket && user?.sacco_id) {
+      socket.emit("join_sacco", { sacco_id: user.sacco_id });
+
+      const handleUpdate = (data) => {
+        console.log("Sacco update received:", data);
+        loadData(); // Re-fetch stats
+      };
+
+      socket.on("sacco_update", handleUpdate);
+
+      return () => {
+        socket.off("sacco_update", handleUpdate);
+      };
+    }
+  }, [socket, user]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 relative">
@@ -138,6 +212,50 @@ export default function SaccoManagementDashboard() {
           </div>
         </div>
       </div>
+
+
+      {/* SACCO SELECTION MODAL */}
+      {showSaccoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-surface border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-bold text-white mb-2">Select Your Sacco</h2>
+            <p className="text-text-muted text-sm mb-6">
+              You are not assigned to a Sacco yet. Please select one to continue.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1">Available Saccos</label>
+                <select
+                  value={selectedSaccoId}
+                  onChange={(e) => setSelectedSaccoId(e.target.value)}
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50"
+                >
+                  <option value="">-- Choose a Sacco --</option>
+                  {saccos.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handleJoinSacco}
+                disabled={!selectedSaccoId || isJoining}
+                className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isJoining ? "Joining..." : "Join Sacco"}
+              </button>
+
+              <button
+                onClick={logout}
+                className="w-full py-2 text-sm text-red-400 hover:text-red-300"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

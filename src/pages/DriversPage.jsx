@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { fetchDrivers, inviteDriver, searchDriver, updateDriverStatus } from "../api/users";
+import { fetchDrivers, inviteDriver, searchDriver, updateDriverStatus, assignRoute } from "../api/users";
+import { fetchRoutes } from "../api/routes";
 import { registerUser } from "../api/auth";
 import { Plus, Search, User, Mail, Phone, MoreVertical } from "lucide-react";
 
@@ -12,8 +13,14 @@ export default function DriversPage() {
     const [newDriverForm, setNewDriverForm] = useState({ name: "", email: "", password: "", role: "driver" });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Profile & Assignment State
+    const [viewDriver, setViewDriver] = useState(null);
+    const [routes, setRoutes] = useState([]);
+    const [selectedRouteId, setSelectedRouteId] = useState("");
+
     useEffect(() => {
         loadDrivers();
+        loadRoutes();
     }, []);
 
     const loadDrivers = async () => {
@@ -24,6 +31,15 @@ export default function DriversPage() {
             setDrivers(data);
         } catch (err) {
             console.error("Failed to load drivers", err);
+        }
+    };
+
+    const loadRoutes = async () => {
+        try {
+            const res = await fetchRoutes();
+            setRoutes(res.data.data || res.data || []);
+        } catch (err) {
+            console.error("Failed to load routes", err);
         }
     };
 
@@ -80,6 +96,22 @@ export default function DriversPage() {
             loadDrivers();
         } catch (err) {
             alert("Failed to create: " + (err.response?.data?.error || err.message));
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleAssignRoute = async () => {
+        if (!viewDriver || !selectedRouteId) return;
+        setIsSubmitting(true);
+        try {
+            await assignRoute(viewDriver.id, selectedRouteId);
+            alert("Route assigned successfully! Driver will be notified.");
+            setViewDriver(null);
+            loadDrivers(); // Refresh data
+        } catch (err) {
+            console.error(err);
+            alert("Failed to assign route: " + (err.response?.data?.error || err.message));
         } finally {
             setIsSubmitting(false);
         }
@@ -176,7 +208,9 @@ export default function DriversPage() {
                                     </button>
                                 </>
                             ) : (
-                                <button className="flex-1 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors">
+                                <button
+                                    onClick={() => setViewDriver(driver)}
+                                    className="flex-1 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors">
                                     View Profile
                                 </button>
                             )}
@@ -339,8 +373,95 @@ export default function DriversPage() {
                         </div>
                     </div>
                 </div>
-            )
-            }
+            )}
+
+            {/* VIEW PROFILE & ASSIGN ROUTE MODAL */}
+            {viewDriver && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="mc-card w-full max-w-lg overflow-hidden animate-in zoom-in duration-200">
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-surface-dark">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                                <User className="text-emerald-400" /> Driver Profile
+                            </h2>
+                            <button onClick={() => setViewDriver(null)} className="text-text-muted hover:text-white">✕</button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            {/* Driver Header */}
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl font-bold border border-emerald-500/50">
+                                    {viewDriver.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-bold text-white">{viewDriver.name}</h3>
+                                    <p className="text-text-muted">{viewDriver.email}</p>
+                                    <div className="flex gap-2 mt-2">
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                            {viewDriver.verification_status}
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-white/5 text-white border border-white/10">
+                                            Driver ID: {viewDriver.id}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr className="border-white/10" />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-3 bg-white/5 rounded-lg border border-white/5">
+                                    <p className="text-xs text-text-muted uppercase mb-1">License Number</p>
+                                    <p className="text-white font-mono">{viewDriver.license_number || "Not Provided"}</p>
+                                </div>
+                                <div className="p-3 bg-white/5 rounded-lg border border-white/5">
+                                    <p className="text-xs text-text-muted uppercase mb-1">Assigned Vehicle</p>
+                                    <p className="text-white font-bold">{viewDriver.assigned_vehicle || "None"}</p>
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-surface-dark rounded-xl border border-dashed border-white/10">
+                                <div className="flex justify-between items-center mb-4">
+                                    <p className="font-bold text-white">Route Assignment</p>
+                                    {viewDriver.assigned_route && (
+                                        <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">
+                                            Currently: {viewDriver.assigned_route}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {viewDriver.assigned_vehicle ? (
+                                    <div className="flex gap-2">
+                                        <select
+                                            className="mc-input flex-1 bg-black/50"
+                                            value={selectedRouteId}
+                                            onChange={(e) => setSelectedRouteId(e.target.value)}
+                                        >
+                                            <option value="">-- Select New Route --</option>
+                                            {routes.map(r => (
+                                                <option key={r.id} value={r.id}>
+                                                    {r.origin} - {r.destination} ({r.distance ? `${r.distance}km` : 'N/A'})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            onClick={handleAssignRoute}
+                                            disabled={isSubmitting || !selectedRouteId}
+                                            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            {isSubmitting ? "..." : "Assign"}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-4 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                                        <p className="text-yellow-500 text-sm">Assign a vehicle to this driver before assigning a route.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }
+
