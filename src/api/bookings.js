@@ -11,3 +11,6 @@ export const updateBookingStatus = (id, action) => axiosInstance.post(`/bookings
 
 // Fetch bookings for a specific matatu (for seat status)
 export const fetchMatatuBookings = (matatuId) => axiosInstance.get(`/bookings/matatu/${matatuId}`);
+
+// Driver trip completion
+export const completeTrip = () => axiosInstance.post('/bookings/complete_trip');

@@ -8,7 +8,8 @@ import { BookingContext } from "../context/BookingContext"; // Import BookingCon
 import SeatSelector from "../components/seats/SeatSelector";
 import ReceiptModal from "../components/payment/ReceiptModal";
 import PaymentModal from "../components/common/PaymentModal"; // Import PaymentModal
-import { LogOut, Calendar, MapPin, Armchair, CreditCard, CheckCircle, Wallet } from "lucide-react";
+import ReviewModal from "../components/ratings/ReviewModal"; // Import ReviewModal
+import { LogOut, Calendar, MapPin, Armchair, CreditCard, CheckCircle, Wallet, Star } from "lucide-react";
 import { createBooking, fetchBookings } from "../api/bookings";
 
 const CommuterDashboard = () => {
@@ -26,6 +27,10 @@ const CommuterDashboard = () => {
   const [showReceipt, setShowReceipt] = useState(false);
   const [currentReceipt, setCurrentReceipt] = useState(null);
   const [showPayment, setShowPayment] = useState(false); // Payment Modal State
+
+  // Review Modal State
+  const [showReview, setShowReview] = useState(false);
+  const [reviewBooking, setReviewBooking] = useState(null);
 
   const socket = useSocket();
 
@@ -338,14 +343,18 @@ const CommuterDashboard = () => {
                 {/* ACTION BUTTONS */}
                 <div className="flex gap-2 mt-3">
 
-
-
-
-
-
-
-
-
+                  {/* Rate Driver Button for Completed Trips */}
+                  {booking.status === 'completed' && (
+                    <button
+                      onClick={() => {
+                        setReviewBooking(booking);
+                        setShowReview(true);
+                      }}
+                      className="flex-1 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Star size={16} /> Rate Driver
+                    </button>
+                  )}
 
                   {/* View Receipt */}
                   {booking.payment_status === 'completed' && (
@@ -399,6 +408,17 @@ const CommuterDashboard = () => {
         <ReceiptModal
           payment={currentReceipt}
           onClose={() => setShowReceipt(false)}
+        />
+      )}
+
+      {/* REVIEW MODAL */}
+      {showReview && reviewBooking && (
+        <ReviewModal
+          booking={reviewBooking}
+          onClose={() => setShowReview(false)}
+          onSuccess={() => {
+            alert("Thanks for your feedback!");
+          }}
         />
       )}
     </>

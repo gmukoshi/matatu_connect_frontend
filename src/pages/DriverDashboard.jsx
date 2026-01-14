@@ -3,9 +3,9 @@ import LiveMap from "../components/map/LiveMap";
 import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
 import { useSocket } from "../context/SocketContext";
-import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle, Bell, CreditCard, TrendingUp } from "lucide-react";
+import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle, Bell, CreditCard, TrendingUp, Flag } from "lucide-react";
 import { acceptVehicle, rejectVehicle, fetchMatatus } from "../api/matatus";
-import { fetchBookings, updateBookingStatus } from "../api/bookings";
+import { fetchBookings, updateBookingStatus, completeTrip } from "../api/bookings";
 import { triggerStkPush } from "../api/payment";
 
 import { submitDriverLog } from "../api/logs";
@@ -32,6 +32,9 @@ const DriverDashboard = () => {
   const [logForm, setLogForm] = useState({ passengers: "", fuel: "", mileage: "" });
 
   const [isSubmittingLog, setIsSubmittingLog] = useState(false);
+
+  // Trip Completion State
+  const [isCompletingTrip, setIsCompletingTrip] = useState(false);
 
   // Notifications
   const [notifications, setNotifications] = useState([]);
@@ -158,6 +161,23 @@ const DriverDashboard = () => {
     } catch (err) {
       console.error(`Failed to ${action} booking`, err);
       alert(`Failed to ${action} booking`);
+    }
+  };
+
+  // TRIP COMPLETION HANDLER
+  const handleCompleteTrip = async () => {
+    if (!window.confirm("Are you sure you want to finish this trip? All confirmed passengers will be marked as dropped off.")) return;
+
+    setIsCompletingTrip(true);
+    try {
+      const res = await completeTrip();
+      alert(res.data.message || "Trip completed successfully!");
+      loadBookings(); // Refresh bookings to show new status
+    } catch (err) {
+      console.error("Failed to complete trip", err);
+      alert("Error completing trip: " + (err.response?.data?.error || err.message));
+    } finally {
+      setIsCompletingTrip(false);
     }
   };
 
@@ -325,6 +345,24 @@ const DriverDashboard = () => {
               </div>
             )}
           </div>
+
+          {/* Complete Trip Button */}
+          {myVehicle && (
+            <button
+              onClick={handleCompleteTrip}
+              disabled={isCompletingTrip || bookings.filter(b => b.status === "confirmed").length === 0}
+              className={`
+                  flex items-center gap-2 px-4 py-2 rounded-full border transition-all font-bold text-sm
+                  ${bookings.filter(b => b.status === "confirmed").length > 0
+                  ? "bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-[0_0_10px_rgba(239,68,68,0.4)]"
+                  : "bg-surface border-white/10 text-text-muted cursor-not-allowed opacity-50"
+                }
+                `}
+            >
+              {isCompletingTrip ? <span className="animate-spin">⌛</span> : <Flag className="w-4 h-4 fill-current" />}
+              {isCompletingTrip ? "Finishing..." : "End Trip"}
+            </button>
+          )}
 
           {/* Online Toggle */}
           <div className={`
