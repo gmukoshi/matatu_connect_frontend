@@ -199,7 +199,7 @@ const CommuterDashboard = () => {
 
               <div className="flex items-center justify-between mt-4">
                 <div className="text-xs text-text-muted">
-                  Driver: <span className="text-slate-300">{v.driverName || "Unknown"}</span>
+                  Driver: <span className="text-slate-300">{v.driverName || "Unknown"} (ID: {v.id})</span>
                 </div>
                 <p className="text-xs font-semibold text-primary group-hover:underline">
                   Select Vehicle →
@@ -337,15 +337,15 @@ const CommuterDashboard = () => {
 
                 {/* ACTION BUTTONS */}
                 <div className="flex gap-2 mt-3">
-                  {/* Pay Button for Confirmed/Pending bookings */}
-                  {booking.payment_status !== 'completed' && booking.status !== 'rejected' && (
-                    <button
-                      onClick={() => handleInitiatePayment(booking)}
-                      className="flex-1 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-                    >
-                      <Wallet size={16} /> Pay Now
-                    </button>
-                  )}
+
+
+
+
+
+
+
+
+
 
                   {/* View Receipt */}
                   {booking.payment_status === 'completed' && (
