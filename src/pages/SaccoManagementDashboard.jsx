@@ -152,10 +152,34 @@ export default function SaccoManagementDashboard() {
 
       {/* STATS GRID */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Revenue" value={`KES ${saccoStats.total_revenue?.toLocaleString() || '0'}`} subtext="Total earnings" trend="+12%" trendUp={true} />
-        <StatCard label="Active Fleet" value={saccoStats.active_fleet || "0/0"} subtext="Vehicles on road" trend="+2%" trendUp={true} />
-        <StatCard label="Daily Passengers" value={saccoStats.daily_passengers?.toLocaleString() || "0"} subtext="Today's total" trend="-5%" trendUp={false} />
-        <StatCard label="Fuel Efficiency" value={saccoStats.fuel_efficiency || "0.0 km/L"} subtext="Fleet average" badge="Stable" />
+        <StatCard
+          label="Total Revenue"
+          value={`KES ${saccoStats.total_revenue?.toLocaleString() || '0'}`}
+          subtext="Total earnings"
+          trend={saccoStats.revenue_growth !== undefined ? `${saccoStats.revenue_growth > 0 ? '+' : ''}${saccoStats.revenue_growth}%` : "0%"}
+          trendUp={saccoStats.revenue_growth >= 0}
+        />
+        <StatCard
+          label="Active Fleet"
+          value={saccoStats.active_fleet || "0/0"}
+          subtext="Vehicles on road"
+          trend="+0%"
+          trendUp={true}
+          badge="Live"
+        />
+        <StatCard
+          label="Daily Passengers"
+          value={saccoStats.daily_passengers?.toLocaleString() || "0"}
+          subtext="Today's total"
+          trend={saccoStats.passenger_growth !== undefined ? `${saccoStats.passenger_growth > 0 ? '+' : ''}${saccoStats.passenger_growth}%` : "0%"}
+          trendUp={saccoStats.passenger_growth >= 0}
+        />
+        <StatCard
+          label="Fuel Efficiency"
+          value={saccoStats.fuel_efficiency || "0.0 km/L"}
+          subtext="Fleet average"
+          badge="Lifetime"
+        />
       </div>
 
       {/* CHARTS SECTION */}
@@ -166,9 +190,9 @@ export default function SaccoManagementDashboard() {
               <h3 className="text-lg font-bold text-white">Revenue Overview</h3>
               <p className="text-text-muted text-sm">Last 7 Days vs Previous Week</p>
             </div>
-            <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full text-xs font-bold">
-              <TrendingUp className="w-4 h-4" />
-              +12.5%
+            <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${saccoStats.revenue_growth >= 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
+              {saccoStats.revenue_growth >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+              {saccoStats.revenue_growth !== undefined ? `${saccoStats.revenue_growth > 0 ? '+' : ''}${saccoStats.revenue_growth}%` : "0%"}
             </div>
           </div>
           <RevenueChart data={saccoStats.revenue_trend} />

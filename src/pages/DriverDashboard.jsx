@@ -3,9 +3,9 @@ import LiveMap from "../components/map/LiveMap";
 import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
 import { useSocket } from "../context/SocketContext";
-import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle, Bell, CreditCard, TrendingUp } from "lucide-react";
+import { Clock, LogOut, MapPin, Navigation, Phone, Search, Users, Wallet, CheckCircle, XCircle, Bell, CreditCard, TrendingUp, Flag } from "lucide-react";
 import { acceptVehicle, rejectVehicle, fetchMatatus } from "../api/matatus";
-import { fetchBookings, updateBookingStatus } from "../api/bookings";
+import { fetchBookings, updateBookingStatus, completeTrip } from "../api/bookings";
 import { triggerStkPush } from "../api/payment";
 
 import { submitDriverLog } from "../api/logs";
@@ -15,9 +15,49 @@ const DriverDashboard = () => {
   const { vehicles, setVehicles } = useApp();
   const { user, logout } = useAuth();
   const socket = useSocket();
-  const [online, setOnline] = useState(true);
+  const [online, setOnline] = useState(false);
+  const [onlineDuration, setOnlineDuration] = useState("0h 0m");
+
+  useEffect(() => {
+    // Check for persisted session
+    const storedStart = localStorage.getItem("onlineStartTime");
+    if (storedStart) {
+      setOnline(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    let interval;
+    if (online) {
+      if (!localStorage.getItem("onlineStartTime")) {
+        localStorage.setItem("onlineStartTime", Date.now().toString());
+      }
+
+      interval = setInterval(() => {
+        const start = parseInt(localStorage.getItem("onlineStartTime"));
+        const diff = Date.now() - start;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        setOnlineDuration(`${hours}h ${minutes}m`);
+      }, 60000); // Update every minute
+
+      // Initial call
+      const start = parseInt(localStorage.getItem("onlineStartTime"));
+      const diff = Date.now() - start;
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      setOnlineDuration(`${hours}h ${minutes}m`);
+
+    } else {
+      localStorage.removeItem("onlineStartTime");
+      setOnlineDuration("0h 0m");
+    }
+    return () => clearInterval(interval);
+  }, [online]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookings, setBookings] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [timeAgo, setTimeAgo] = useState("Just now");
 
   // Payment Modal State
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -31,13 +71,27 @@ const DriverDashboard = () => {
 
   const [isSubmittingLog, setIsSubmittingLog] = useState(false);
 
+  // Trip Completion State
+  const [isCompletingTrip, setIsCompletingTrip] = useState(false);
+
   // Notifications
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     loadNotifications();
-  }, []);
+
+    // Ticker for "Updated X ago"
+    const timer = setInterval(() => {
+      const diff = Math.floor((new Date() - lastUpdated) / 1000);
+      if (diff < 5) setTimeAgo("Just now");
+      else if (diff < 60) setTimeAgo(`${diff}s ago`);
+      else if (diff < 3600) setTimeAgo(`${Math.floor(diff / 60)}m ago`);
+      else setTimeAgo(`${Math.floor(diff / 3600)}h ago`);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [lastUpdated]);
 
   const loadNotifications = async () => {
     try {
@@ -73,12 +127,14 @@ const DriverDashboard = () => {
           console.log("New booking received:", newBooking);
           // Play notification sound if desired
           setBookings(prev => [newBooking, ...prev]);
+          setLastUpdated(new Date()); // Update timestamp
           alert(`New booking from ${newBooking.user_name}!`);
         });
 
         socket.on("booking_updated", (updatedBooking) => {
           console.log("Booking updated PAYLOAD:", updatedBooking);
           setBookings(prev => prev.map(b => b.id === updatedBooking.id ? updatedBooking : b));
+          setLastUpdated(new Date()); // Update timestamp
         });
 
         return () => {
@@ -95,6 +151,7 @@ const DriverDashboard = () => {
       // Ensure we get an array. The backend returns { data: [...], message: "..." }
       const data = res.data.data || [];
       setBookings(data);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Failed to load bookings", err);
     }
@@ -142,6 +199,23 @@ const DriverDashboard = () => {
     } catch (err) {
       console.error(`Failed to ${action} booking`, err);
       alert(`Failed to ${action} booking`);
+    }
+  };
+
+  // TRIP COMPLETION HANDLER
+  const handleCompleteTrip = async () => {
+    if (!window.confirm("Are you sure you want to finish this trip? All confirmed passengers will be marked as dropped off.")) return;
+
+    setIsCompletingTrip(true);
+    try {
+      const res = await completeTrip();
+      alert(res.data.message || "Trip completed successfully!");
+      loadBookings(); // Refresh bookings to show new status
+    } catch (err) {
+      console.error("Failed to complete trip", err);
+      alert("Error completing trip: " + (err.response?.data?.error || err.message));
+    } finally {
+      setIsCompletingTrip(false);
     }
   };
 
@@ -310,6 +384,24 @@ const DriverDashboard = () => {
             )}
           </div>
 
+          {/* Complete Trip Button */}
+          {myVehicle && (
+            <button
+              onClick={handleCompleteTrip}
+              disabled={isCompletingTrip || bookings.filter(b => b.status === "confirmed").length === 0}
+              className={`
+                  flex items-center gap-2 px-4 py-2 rounded-full border transition-all font-bold text-sm
+                  ${bookings.filter(b => b.status === "confirmed").length > 0
+                  ? "bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-[0_0_10px_rgba(239,68,68,0.4)]"
+                  : "bg-surface border-white/10 text-text-muted cursor-not-allowed opacity-50"
+                }
+                `}
+            >
+              {isCompletingTrip ? <span className="animate-spin">⌛</span> : <Flag className="w-4 h-4 fill-current" />}
+              {isCompletingTrip ? "Finishing..." : "End Trip"}
+            </button>
+          )}
+
           {/* Online Toggle */}
           <div className={`
             flex items-center gap-3 px-4 py-2 rounded-full border transition-all cursor-pointer
@@ -361,12 +453,17 @@ const DriverDashboard = () => {
             <div>
               <p className="font-medium opacity-80 mb-1">Today's Earnings</p>
               <h2 className="text-5xl font-bold mb-4">
-                KES {bookings.reduce((sum, b) => sum + (b.payment_status === 'completed' ? (b.payment_amount || 0) : 0), 0).toLocaleString()}
+                <h2 className="text-5xl font-bold mb-4">
+                  KES {bookings.reduce((sum, b) => {
+                    const isToday = new Date(b.booking_date).toDateString() === new Date().toDateString();
+                    return sum + ((b.payment_status === 'completed' && isToday) ? (b.payment_amount || 0) : 0);
+                  }, 0).toLocaleString()}
+                </h2>
               </h2>
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-black/10 rounded-full text-xs font-semibold">
-                <span>📈 +12% vs yesterday</span>
+                <span>📈 Real-time</span>
               </div>
-              <span className="text-xs opacity-60 ml-3">Updated 5m ago</span>
+              <span className="text-xs opacity-60 ml-3">Updated {timeAgo}</span>
             </div>
             <div className="p-3 bg-black/10 rounded-2xl">
               <Wallet className="w-6 h-6" />
@@ -379,8 +476,8 @@ const DriverDashboard = () => {
           <StatCard
             icon={<Clock className="w-5 h-5 text-yellow-400" />}
             label="Hours Online"
-            value="6h 12m"
-            subtext="Since 6:00 AM"
+            value={onlineDuration}
+            subtext={online ? "Tracking time..." : "Offline"}
           />
           <StatCard
             icon={<Navigation className="w-5 h-5 text-emerald-400" />}

@@ -190,12 +190,15 @@ function AppRoutes() {
 }
 
 import { SocketProvider } from "./context/SocketContext";
+import { BookingProvider } from "./context/BookingContext";
 
 function App() {
   return (
     <AuthProvider>
       <SocketProvider>
-        <AppRoutes />
+        <BookingProvider>
+          <AppRoutes />
+        </BookingProvider>
       </SocketProvider>
     </AuthProvider>
   );

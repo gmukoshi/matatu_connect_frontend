@@ -208,11 +208,20 @@ export default function DriversPage() {
                                     </button>
                                 </>
                             ) : (
-                                <button
-                                    onClick={() => setViewDriver(driver)}
-                                    className="flex-1 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors">
-                                    View Profile
-                                </button>
+                                <div className="flex gap-2 w-full">
+                                    <button
+                                        onClick={() => setViewDriver(driver)}
+                                        className="flex-1 py-2 text-sm font-semibold bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors">
+                                        View Profile
+                                    </button>
+                                    <button
+                                        onClick={() => handleStatusUpdate(driver.id, 'dismiss')}
+                                        className="py-2 px-3 text-sm font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors border border-red-500/10"
+                                        title="Dismiss Driver from Sacco"
+                                    >
+                                        Dismiss
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </div>

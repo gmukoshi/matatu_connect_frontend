@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus } from "lucide-react"; // Import icon
+import { Plus, Search } from "lucide-react"; // Import icon
 import { fetchMatatus, addVehicle, updateVehicle, deleteVehicle } from "../api/matatus";
 import { fetchRoutes } from "../api/routes";
 import { fetchDrivers } from "../api/users";
@@ -13,6 +13,7 @@ export default function FleetPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     const [vehicleForm, setVehicleForm] = useState({
         plate_number: "",
@@ -124,12 +125,24 @@ export default function FleetPage() {
                     <h1 className="text-3xl font-bold text-white">Fleet Management</h1>
                     <p className="text-text-muted">Manage your vehicles and their status.</p>
                 </div>
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="mc-btn-primary flex items-center gap-2"
-                >
-                    <Plus size={20} /> Add Vehicle
-                </button>
+                <div className="flex gap-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search fleet..."
+                            className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-text-muted focus:outline-none focus:border-primary w-64"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="mc-btn-primary flex items-center gap-2"
+                    >
+                        <Plus size={20} /> Add Vehicle
+                    </button>
+                </div>
             </div>
 
             <div className="bg-surface-dark rounded-2xl p-6 shadow-lg">
@@ -145,7 +158,10 @@ export default function FleetPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                        {vehicles.map((vehicle) => (
+                        {vehicles.filter(v =>
+                            v.plate_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (v.driver && v.driver.toLowerCase().includes(searchQuery.toLowerCase()))
+                        ).map((vehicle) => (
                             <tr key={vehicle.id} className="hover:bg-white/5 transition-colors">
                                 <td className="py-4 font-medium text-white">{vehicle.plate_number}</td>
                                 <td className="py-4">{vehicle.capacity}</td>
