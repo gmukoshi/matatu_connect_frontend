@@ -20,6 +20,12 @@ const ReviewModal = ({ booking, onClose, onSuccess }) => {
     setError("");
 
     try {
+      console.log("Submitting rating:", { matatuId: booking.matatu?.id, rating, comment });
+
+      if (!booking.matatu?.id) {
+        throw new Error("Invalid booking data: Missing vehicle info");
+      }
+
       await submitRating({
         matatu_id: booking.matatu.id,
         score: rating,
@@ -71,8 +77,8 @@ const ReviewModal = ({ booking, onClose, onSuccess }) => {
                   <Star
                     size={32}
                     className={`${star <= (hoverRating || rating)
-                        ? "fill-yellow-500 text-yellow-500"
-                        : "text-white/20"
+                      ? "fill-yellow-500 text-yellow-500"
+                      : "text-white/20"
                       } transition-colors duration-200`}
                   />
                 </button>

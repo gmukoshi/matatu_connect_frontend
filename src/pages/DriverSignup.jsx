@@ -23,8 +23,8 @@ export default function DriverSignup() {
     e.preventDefault();
     setError("");
 
-    if (!formData.firstName || !formData.email || !formData.password) {
-      setError("Please fill in all required fields");
+    if (!formData.firstName || !formData.email || !formData.password || !formData.licence) {
+      setError("Please fill in all required fields (including License No.)");
       return;
     }
 

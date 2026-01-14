@@ -11,6 +11,7 @@ import PaymentModal from "../components/common/PaymentModal"; // Import PaymentM
 import ReviewModal from "../components/ratings/ReviewModal"; // Import ReviewModal
 import { LogOut, Calendar, MapPin, Armchair, CreditCard, CheckCircle, Wallet, Star } from "lucide-react";
 import { createBooking, fetchBookings } from "../api/bookings";
+import { fetchRatings } from "../api/ratings";
 
 const CommuterDashboard = () => {
   const { vehicles, routes } = useApp();
@@ -32,10 +33,15 @@ const CommuterDashboard = () => {
   const [showReview, setShowReview] = useState(false);
   const [reviewBooking, setReviewBooking] = useState(null);
 
+  // My Reviews Response State
+  const [myReviews, setMyReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+
   const socket = useSocket();
 
   useEffect(() => {
     loadBookings();
+    loadReviews();
 
     if (socket && user) {
       // Authenticate socket user room
@@ -61,8 +67,15 @@ const CommuterDashboard = () => {
 
       socket.on("payment_received", handlePayment);
 
+      // Listen for status updates (Accepted/Rejected/Completed)
+      socket.on("booking_status_update", (data) => {
+        console.log("Booking Status Updated:", data);
+        loadBookings();
+      });
+
       return () => {
         socket.off("payment_received", handlePayment);
+        socket.off("booking_status_update");
       };
     }
   }, [socket, user]);
@@ -78,6 +91,20 @@ const CommuterDashboard = () => {
       console.error("Failed to load bookings", err);
     } finally {
       setLoadingBookings(false);
+    }
+  };
+
+  const loadReviews = async () => {
+    setLoadingReviews(true);
+    try {
+      const res = await fetchRatings();
+      // Since we are commuter, this returns our own ratings
+      const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
+      setMyReviews(data);
+    } catch (err) {
+      console.error("Failed to load reviews", err);
+    } finally {
+      setLoadingReviews(false);
     }
   };
 
@@ -383,6 +410,44 @@ const CommuterDashboard = () => {
             <MapPin size={48} className="mx-auto mb-3 text-emerald-500/20" />
             <p className="text-text-muted">No bookings yet. Select a vehicle above to book your first ride!</p>
           </div>
+        )}
+      </div>
+
+      {/* MY REVIEWS & REPLIES SECTION */}
+      <div className="bg-surface-dark rounded-2xl p-6 border border-white/5 mb-8">
+        <h3 className="text-xl font-bold text-white mb-6">My Reviews & Responses</h3>
+
+        {loadingReviews ? (
+          <div className="text-text-muted">Loading reviews...</div>
+        ) : myReviews.length > 0 ? (
+          <div className="grid md:grid-cols-2 gap-4">
+            {myReviews.map(review => (
+              <div key={review.id} className="mc-card p-4 flex flex-col gap-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-bold text-white">{review.matatu_plate}</p>
+                    <div className="flex text-yellow-500 text-sm items-center gap-1">
+                      <Star size={12} fill="currentColor" /> {review.score}/5
+                    </div>
+                  </div>
+                  <span className="text-xs text-text-muted">{new Date(review.created_at).toLocaleDateString()}</span>
+                </div>
+
+                <div className="bg-white/5 p-3 rounded-lg text-sm text-text-muted italic">
+                  "{review.comment}"
+                </div>
+
+                {review.reply && (
+                  <div className="mt-2 bg-emerald-500/10 border-l-2 border-emerald-500 p-3 rounded-r-lg">
+                    <p className="text-xs text-emerald-400 font-bold mb-1">Manager's Reply:</p>
+                    <p className="text-sm text-white">{review.reply}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-text-muted italic">You haven't submitted any reviews yet.</p>
         )}
       </div>
 

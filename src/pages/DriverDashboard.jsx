@@ -15,7 +15,45 @@ const DriverDashboard = () => {
   const { vehicles, setVehicles } = useApp();
   const { user, logout } = useAuth();
   const socket = useSocket();
-  const [online, setOnline] = useState(true);
+  const [online, setOnline] = useState(false);
+  const [onlineDuration, setOnlineDuration] = useState("0h 0m");
+
+  useEffect(() => {
+    // Check for persisted session
+    const storedStart = localStorage.getItem("onlineStartTime");
+    if (storedStart) {
+      setOnline(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    let interval;
+    if (online) {
+      if (!localStorage.getItem("onlineStartTime")) {
+        localStorage.setItem("onlineStartTime", Date.now().toString());
+      }
+
+      interval = setInterval(() => {
+        const start = parseInt(localStorage.getItem("onlineStartTime"));
+        const diff = Date.now() - start;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        setOnlineDuration(`${hours}h ${minutes}m`);
+      }, 60000); // Update every minute
+
+      // Initial call
+      const start = parseInt(localStorage.getItem("onlineStartTime"));
+      const diff = Date.now() - start;
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      setOnlineDuration(`${hours}h ${minutes}m`);
+
+    } else {
+      localStorage.removeItem("onlineStartTime");
+      setOnlineDuration("0h 0m");
+    }
+    return () => clearInterval(interval);
+  }, [online]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookings, setBookings] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -415,7 +453,12 @@ const DriverDashboard = () => {
             <div>
               <p className="font-medium opacity-80 mb-1">Today's Earnings</p>
               <h2 className="text-5xl font-bold mb-4">
-                KES {bookings.reduce((sum, b) => sum + (b.payment_status === 'completed' ? (b.payment_amount || 0) : 0), 0).toLocaleString()}
+                <h2 className="text-5xl font-bold mb-4">
+                  KES {bookings.reduce((sum, b) => {
+                    const isToday = new Date(b.booking_date).toDateString() === new Date().toDateString();
+                    return sum + ((b.payment_status === 'completed' && isToday) ? (b.payment_amount || 0) : 0);
+                  }, 0).toLocaleString()}
+                </h2>
               </h2>
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-black/10 rounded-full text-xs font-semibold">
                 <span>📈 Real-time</span>
@@ -433,8 +476,8 @@ const DriverDashboard = () => {
           <StatCard
             icon={<Clock className="w-5 h-5 text-yellow-400" />}
             label="Hours Online"
-            value="6h 12m"
-            subtext="Since 6:00 AM"
+            value={onlineDuration}
+            subtext={online ? "Tracking time..." : "Offline"}
           />
           <StatCard
             icon={<Navigation className="w-5 h-5 text-emerald-400" />}

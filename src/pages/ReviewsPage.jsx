@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { fetchRatings } from "../api/ratings";
-import { Star, MessageSquare, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { fetchRatings, replyToReview } from "../api/ratings";
+import { Star, MessageSquare, User, CornerUpLeft } from "lucide-react";
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState([]);
@@ -19,6 +19,26 @@ export default function ReviewsPage() {
       console.error("Failed to load reviews", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const [activeReplyId, setActiveReplyId] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleReplySubmit = async (id) => {
+    if (!replyText) return;
+    setSubmitting(true);
+    try {
+      await replyToReview(id, replyText);
+      alert("Reply added!");
+      setReplyText("");
+      setActiveReplyId(null);
+      loadReviews();
+    } catch (err) {
+      alert("Failed to reply");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -54,6 +74,52 @@ export default function ReviewsPage() {
               <div className="mt-auto pt-4 border-t border-white/5 flex justify-between text-xs text-text-muted">
                 <span>Vehicle ID: {review.matatu_id}</span>
               </div>
+
+              {/* Manager Reply Section */}
+              {review.reply ? (
+                <div className="bg-emerald-500/10 p-4 rounded-lg border-l-2 border-emerald-500 mt-2">
+                  <p className="text-xs text-emerald-400 font-bold mb-1 flex items-center gap-1">
+                    <CornerUpLeft size={12} /> Manager's Reply
+                  </p>
+                  <p className="text-sm text-white">{review.reply}</p>
+                </div>
+              ) : (
+                <div className="mt-2">
+                  {activeReplyId === review.id ? (
+                    <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-2">
+                      <textarea
+                        className="mc-input text-sm p-2"
+                        placeholder="Write a reply..."
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        autoFocus
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => setActiveReplyId(null)}
+                          className="text-xs text-text-muted hover:text-white px-2 py-1"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleReplySubmit(review.id)}
+                          disabled={submitting}
+                          className="bg-emerald-500 text-black text-xs font-bold px-3 py-1 rounded hover:bg-emerald-400"
+                        >
+                          {submitting ? "Sending..." : "Send Reply"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setActiveReplyId(review.id); setReplyText(""); }}
+                      className="text-emerald-400 text-xs font-bold hover:underline flex items-center gap-1"
+                    >
+                      <CornerUpLeft size={14} /> Reply to Customer
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
 
