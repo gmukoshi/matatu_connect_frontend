@@ -1,17 +1,20 @@
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useContext } from "react";
 import LiveMap from "../components/map/LiveMap";
 import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
-import { useSocket } from "../context/SocketContext"; // Added Socket Context
+import { useSocket } from "../context/SocketContext";
+import { BookingContext } from "../context/BookingContext"; // Import BookingContext
 import SeatSelector from "../components/seats/SeatSelector";
-import ReceiptModal from "../components/payment/ReceiptModal"; // Added Receipt Modal
-import { LogOut, Calendar, MapPin, Armchair, CreditCard, CheckCircle } from "lucide-react";
+import ReceiptModal from "../components/payment/ReceiptModal";
+import PaymentModal from "../components/common/PaymentModal"; // Import PaymentModal
+import { LogOut, Calendar, MapPin, Armchair, CreditCard, CheckCircle, Wallet } from "lucide-react";
 import { createBooking, fetchBookings } from "../api/bookings";
 
 const CommuterDashboard = () => {
   const { vehicles, routes } = useApp();
   const { user, logout } = useAuth(); // Get user and logout function
+  const { setCurrentBooking } = useContext(BookingContext); // Use BookingContext
   const [routeFilter, setRouteFilter] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState(null);
 
@@ -22,6 +25,7 @@ const CommuterDashboard = () => {
   // Receipt State
   const [showReceipt, setShowReceipt] = useState(false);
   const [currentReceipt, setCurrentReceipt] = useState(null);
+  const [showPayment, setShowPayment] = useState(false); // Payment Modal State
 
   const socket = useSocket();
 
@@ -34,10 +38,20 @@ const CommuterDashboard = () => {
       socket.emit("join_user", { user_id: user.id });
 
       const handlePayment = (data) => {
-        console.log("Payment Received:", data);
-        setCurrentReceipt(data);
+        console.log("DASHBOARD: Payment Received:", data);
+
+        // Ensure data has all receipt fields
+        const receiptData = {
+          amount: data.amount,
+          date: data.date || new Date().toISOString(),
+          reference: data.receipt_number || "PENDING",
+          booking_id: data.booking_id
+        };
+
+        setCurrentReceipt(receiptData);
         setShowReceipt(true);
-        loadBookings(); // Refresh list to show 'Paid' status
+        setShowPayment(false);
+        loadBookings();
       };
 
       socket.on("payment_received", handlePayment);
@@ -60,6 +74,16 @@ const CommuterDashboard = () => {
     } finally {
       setLoadingBookings(false);
     }
+  };
+
+  const handleInitiatePayment = (booking) => {
+    // Set the booking to Context so PaymentModal can access it
+    setCurrentBooking({
+      id: booking.id,
+      amount: booking.payment_amount || booking.matatu?.route?.fare || 100, // Fallback amount
+      seat: `Seat ${booking.seat_number}`
+    });
+    setShowPayment(true);
   };
 
   const filteredVehicles = useMemo(() => {
@@ -230,6 +254,13 @@ const CommuterDashboard = () => {
                   });
                 }
                 alert(`Successfully booked seat(s) ${seats.join(", ")} on ${selectedVehicle.name}`);
+
+                // OPTIONAL: Auto-trigger payment for the last booked seat to streamline flow
+                if (seats.length === 1) {
+                  // We need the booking ID, but createBooking might not return it clearly in all cases or we need to find it directly.
+                  // For now, let's just refresh and let user click 'Pay'
+                }
+
                 setSelectedVehicle(null);
                 loadBookings(); // Refresh bookings list
               } catch (err) {
@@ -304,24 +335,37 @@ const CommuterDashboard = () => {
                   </div>
                 </div>
 
-                {/* Proof of Payment Button */}
-                {booking.payment_status === 'completed' && (
-                  <button
-                    onClick={() => {
-                      const receipt = {
-                        amount: booking.payment_amount,
-                        date: booking.booking_date, // Or payment date if available
-                        reference: `BK-${booking.id}`, // Fallback if ref is missing
-                        booking_id: booking.id
-                      };
-                      setCurrentReceipt(receipt);
-                      setShowReceipt(true);
-                    }}
-                    className="mt-3 w-full py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <CheckCircle size={16} /> View Receipt
-                  </button>
-                )}
+                {/* ACTION BUTTONS */}
+                <div className="flex gap-2 mt-3">
+                  {/* Pay Button for Confirmed/Pending bookings */}
+                  {booking.payment_status !== 'completed' && booking.status !== 'rejected' && (
+                    <button
+                      onClick={() => handleInitiatePayment(booking)}
+                      className="flex-1 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Wallet size={16} /> Pay Now
+                    </button>
+                  )}
+
+                  {/* View Receipt */}
+                  {booking.payment_status === 'completed' && (
+                    <button
+                      onClick={() => {
+                        const receipt = {
+                          amount: booking.payment_amount,
+                          date: booking.booking_date,
+                          reference: `BK-${booking.id}`,
+                          booking_id: booking.id
+                        };
+                        setCurrentReceipt(receipt);
+                        setShowReceipt(true);
+                      }}
+                      className="flex-1 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <CheckCircle size={16} /> Receipt
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -332,6 +376,23 @@ const CommuterDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* MODALS */}
+
+      {/* Payment Modal Overlay */}
+      {showPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="relative">
+            <button
+              onClick={() => setShowPayment(false)}
+              className="absolute -top-10 right-0 text-white hover:text-red-400 transition"
+            >
+              Close
+            </button>
+            <PaymentModal />
+          </div>
+        </div>
+      )}
 
       {/* RECEIPT MODAL */}
       {showReceipt && currentReceipt && (

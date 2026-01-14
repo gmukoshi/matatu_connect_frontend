@@ -10,12 +10,28 @@ export default defineConfig({
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
         secure: false,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            if (err.code === 'ECONNREFUSED') {
+              return;
+            }
+            console.error('Proxy error:', err);
+          });
+        }
       },
       '/socket.io': {
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
         secure: false,
-        ws: true
+        ws: true,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            if (err.code === 'ECONNREFUSED') {
+              return;
+            }
+            console.error('Socket proxy error:', err);
+          });
+        }
       }
     }
   }

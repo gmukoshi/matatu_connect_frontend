@@ -18,6 +18,8 @@ const DriverDashboard = () => {
   const [online, setOnline] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookings, setBookings] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [timeAgo, setTimeAgo] = useState("Just now");
 
   // Payment Modal State
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -37,7 +39,18 @@ const DriverDashboard = () => {
 
   useEffect(() => {
     loadNotifications();
-  }, []);
+
+    // Ticker for "Updated X ago"
+    const timer = setInterval(() => {
+      const diff = Math.floor((new Date() - lastUpdated) / 1000);
+      if (diff < 5) setTimeAgo("Just now");
+      else if (diff < 60) setTimeAgo(`${diff}s ago`);
+      else if (diff < 3600) setTimeAgo(`${Math.floor(diff / 60)}m ago`);
+      else setTimeAgo(`${Math.floor(diff / 3600)}h ago`);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [lastUpdated]);
 
   const loadNotifications = async () => {
     try {
@@ -73,12 +86,14 @@ const DriverDashboard = () => {
           console.log("New booking received:", newBooking);
           // Play notification sound if desired
           setBookings(prev => [newBooking, ...prev]);
+          setLastUpdated(new Date()); // Update timestamp
           alert(`New booking from ${newBooking.user_name}!`);
         });
 
         socket.on("booking_updated", (updatedBooking) => {
           console.log("Booking updated PAYLOAD:", updatedBooking);
           setBookings(prev => prev.map(b => b.id === updatedBooking.id ? updatedBooking : b));
+          setLastUpdated(new Date()); // Update timestamp
         });
 
         return () => {
@@ -95,6 +110,7 @@ const DriverDashboard = () => {
       // Ensure we get an array. The backend returns { data: [...], message: "..." }
       const data = res.data.data || [];
       setBookings(data);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Failed to load bookings", err);
     }
@@ -364,9 +380,9 @@ const DriverDashboard = () => {
                 KES {bookings.reduce((sum, b) => sum + (b.payment_status === 'completed' ? (b.payment_amount || 0) : 0), 0).toLocaleString()}
               </h2>
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-black/10 rounded-full text-xs font-semibold">
-                <span>📈 +12% vs yesterday</span>
+                <span>📈 Real-time</span>
               </div>
-              <span className="text-xs opacity-60 ml-3">Updated 5m ago</span>
+              <span className="text-xs opacity-60 ml-3">Updated {timeAgo}</span>
             </div>
             <div className="p-3 bg-black/10 rounded-2xl">
               <Wallet className="w-6 h-6" />
