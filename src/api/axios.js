@@ -13,7 +13,7 @@ const API_BASE_URL =
  */
 const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 30000, // 30 seconds to handle slow M-Pesa sandbox responses
+    timeout: 30000, // 30 seconds to handle slow M-Pesa sandbox responses (Updated for Production)
     headers: {
         'Content-Type': 'application/json',
     },
