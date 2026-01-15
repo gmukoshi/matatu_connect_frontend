@@ -10,5 +10,6 @@ import axiosInstance from './apiClient';
  */
 export const triggerStkPush = (data) => {
     console.log("DEBUG: Current Axios Timeout config:", axiosInstance.defaults.timeout);
-    return axiosInstance.post('/payments/stk-push', data);
+    // Explicitly override timeout for this request to 60 seconds
+    return axiosInstance.post('/payments/stk-push', data, { timeout: 60000 });
 };

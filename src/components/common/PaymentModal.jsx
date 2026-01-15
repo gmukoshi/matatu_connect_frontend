@@ -8,7 +8,7 @@ import Input from './Input';
 const PaymentModal = () => {
     // Access global state
     const { currentBooking, processPayment, loading } = useContext(BookingContext);
-    
+
     // Local state for form fields
     const [phone, setPhone] = useState('');
     const [error, setError] = useState('');
@@ -28,7 +28,7 @@ const PaymentModal = () => {
         // Check for Kenyan phone format (Simple Regex)
         // Accepts: 0722..., 0110..., 2547...
         const phoneRegex = /^(?:254|\+254|0)?(7(?:(?:[129][0-9])|(?:0[0-8])|(?:4[0-1]))[0-9]{6})$/;
-        
+
         // Note: For this demo, we'll be lenient, but in production use strict regex
         if (phone.length < 10) {
             setError('Please enter a valid M-Pesa number');
@@ -41,7 +41,7 @@ const PaymentModal = () => {
 
     return (
         <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative">
-            
+
             {/* Header Section */}
             <div className="bg-gray-800 p-6 border-b border-gray-700">
                 <h3 className="text-xl text-white font-bold">Confirm Payment</h3>
@@ -52,7 +52,7 @@ const PaymentModal = () => {
 
             {/* Body Section */}
             <div className="p-6 space-y-6">
-                
+
                 {/* Summary Card */}
                 <div className="bg-black/40 rounded-lg p-4 border border-gray-700 flex justify-between items-center">
                     <div>
@@ -71,7 +71,7 @@ const PaymentModal = () => {
 
                 {/* Form */}
                 <form onSubmit={handlePay} className="space-y-5">
-                    <Input 
+                    <Input
                         label="M-Pesa Number"
                         placeholder="e.g. 0722 123 456"
                         value={phone}
@@ -86,16 +86,16 @@ const PaymentModal = () => {
                     />
 
                     <div className="pt-2">
-                        <Button 
-                            type="submit" 
-                            fullWidth 
+                        <Button
+                            type="submit"
+                            fullWidth
                             variant="primary"
                             size="md"
                             isLoading={loading}
                         >
-                            Pay with M-Pesa
+                            Pay with M-Pesa (Secure)
                         </Button>
-                        
+
                         {/* Helper Text */}
                         <p className="text-center text-gray-500 text-xs mt-3">
                             An STK Push will be sent to your phone.
