@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance from './apiClient';
 
 // Fetch bookings (filtered by role on backend)
 export const fetchBookings = () => axiosInstance.get('/bookings/');

@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance from './apiClient';
 
 // Fetch all matatus
 export const fetchMatatus = async () => {

@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance from './apiClient';
 
 // Only Transaction data
 export const requestSTKPush = (payload) => axiosInstance.post('/payments/initiate', payload);

@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance from './apiClient';
 
 export const registerUser = async (userData) => {
     const response = await axiosInstance.post('/auth/register', userData);

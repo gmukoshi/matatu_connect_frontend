@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance from './apiClient';
 
 // Fetch all routes
 export const fetchRoutes = () => axiosInstance.get('/routes/');

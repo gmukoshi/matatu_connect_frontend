@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance from './apiClient';
 
 export const fetchRatings = () => axiosInstance.get('/ratings/');
 export const submitRating = (data) => axiosInstance.post('/ratings/', data);

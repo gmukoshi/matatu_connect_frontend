@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance from './apiClient';
 
 export const fetchNotifications = () => axiosInstance.get('/notifications/');
 

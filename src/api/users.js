@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance from './apiClient';
 
 // Drivers
 export const fetchDrivers = () => axiosInstance.get('/users/manager/drivers');

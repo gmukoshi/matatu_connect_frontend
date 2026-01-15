@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance from './apiClient';
 
 // Fetch global stats (for homepage or admin)
 export const fetchDashboardStats = () => axiosInstance.get('/dashboard/stats');
