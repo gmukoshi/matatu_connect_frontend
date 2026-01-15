@@ -125,10 +125,14 @@ const DriverDashboard = () => {
 
         socket.on("new_booking", (newBooking) => {
           console.log("New booking received:", newBooking);
-          // Play notification sound if desired
+
+          // Play notification sound
+          const audio = new Audio("https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3");
+          audio.play().catch(e => console.log("Audio play failed:", e));
+
           setBookings(prev => [newBooking, ...prev]);
           setLastUpdated(new Date()); // Update timestamp
-          alert(`New booking from ${newBooking.user_name}!`);
+          // alert(`New booking: ${newBooking.seat_number}`); // Removed blocking alert
         });
 
         socket.on("booking_updated", (updatedBooking) => {
