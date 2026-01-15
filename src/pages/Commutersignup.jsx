@@ -11,6 +11,9 @@ export default function CommuterSignup() {
     firstname: "",
     secondname: "",
     email: "",
+    secondname: "",
+    email: "",
+    phone_number: "",
     password: "",
   });
 
@@ -32,6 +35,7 @@ export default function CommuterSignup() {
       const payload = {
         name: `${formData.firstname} ${formData.secondname}`.trim(),
         email: formData.email,
+        phone_number: formData.phone_number,
         password: formData.password,
         role: "commuter"
       };
@@ -122,6 +126,18 @@ export default function CommuterSignup() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="jane@example.com"
+                className="mc-input"
+              />
+            </div>
+
+            <div>
+              <label className="mc-label">Phone Number</label>
+              <input
+                type="tel"
+                name="phone_number"
+                value={formData.phone_number}
+                onChange={handleChange}
+                placeholder="0712345678"
                 className="mc-input"
               />
             </div>
