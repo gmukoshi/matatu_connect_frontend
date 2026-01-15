@@ -13,6 +13,7 @@ export default function ManagerSignup() {
     saccoName: "", // Keeping for compat, but using sacco_id
     email: "",
     workEmail: "",
+    phone_number: "", // added field
     password: "",
     agree: false
   });
@@ -35,8 +36,8 @@ export default function ManagerSignup() {
     e.preventDefault();
     setError("");
 
-    if (!formData.firstName || !formData.email || !formData.password || !formData.agree) {
-      setError("Please fill in all fields and agree to terms");
+    if (!formData.firstName || !formData.email || !formData.password || !formData.agree || !formData.phone_number) {
+      setError("Please fill in all fields (including Phone) and agree to terms");
       return;
     }
 
@@ -46,6 +47,7 @@ export default function ManagerSignup() {
       const payload = {
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
+        phone_number: formData.phone_number,
         password: formData.password,
         role: "sacco_manager",
         sacco_id: isNewSacco ? null : formData.sacco_id,
@@ -231,6 +233,18 @@ export default function ManagerSignup() {
                 value={formData.workEmail}
                 onChange={handleChange}
                 placeholder="admin@supermetro.co.ke"
+                className="mc-input"
+              />
+            </div>
+
+            <div>
+              <label className="mc-label">Phone Number</label>
+              <input
+                name="phone_number"
+                type="tel"
+                value={formData.phone_number}
+                onChange={handleChange}
+                placeholder="2547XXXXXXXX"
                 className="mc-input"
               />
             </div>

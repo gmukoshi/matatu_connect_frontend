@@ -13,6 +13,7 @@ export default function DriverSignup() {
     licence: "",
     plate: "",
     email: "",
+    phone_number: "", // added field
     password: "",
   });
 
@@ -23,8 +24,8 @@ export default function DriverSignup() {
     e.preventDefault();
     setError("");
 
-    if (!formData.firstName || !formData.email || !formData.password || !formData.licence) {
-      setError("Please fill in all required fields (including License No.)");
+    if (!formData.firstName || !formData.email || !formData.password || !formData.licence || !formData.phone_number) {
+      setError("Please fill in all required fields (including License, Plate, Phone)");
       return;
     }
 
@@ -34,6 +35,7 @@ export default function DriverSignup() {
       const payload = {
         name: `${formData.firstName} ${formData.secondName}`.trim(),
         email: formData.email,
+        phone_number: formData.phone_number,
         password: formData.password,
         licence: formData.licence,
         plate: formData.plate,
@@ -130,6 +132,18 @@ export default function DriverSignup() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="driver@example.com"
+                className="mc-input"
+              />
+            </div>
+
+            <div>
+              <label className="mc-label">Phone Number</label>
+              <input
+                type="tel"
+                name="phone_number"
+                value={formData.phone_number}
+                onChange={handleChange}
+                placeholder="2547XXXXXXXX"
                 className="mc-input"
               />
             </div>
