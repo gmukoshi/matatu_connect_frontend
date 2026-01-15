@@ -60,8 +60,10 @@ export const BookingProvider = ({ children }) => {
       }
     } catch (err) {
       console.error("Payment Error:", err);
-      setError(err.response?.data?.message || "Payment initiation failed.");
-      alert(err.response?.data?.message || "Payment initiation failed.");
+      // Fallback to err.message if response is missing (e.g. timeout/network error)
+      const errorMsg = err.response?.data?.message || err.message || "Payment initiation failed.";
+      setError(errorMsg);
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }

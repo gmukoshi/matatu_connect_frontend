@@ -10,6 +10,8 @@ export default defineConfig({
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
         secure: false,
+        timeout: 120000,
+        proxyTimeout: 120000,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
             if (err.code === 'ECONNREFUSED') {
