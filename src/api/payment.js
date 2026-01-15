@@ -8,4 +8,7 @@ import axiosInstance from './axios';
  * @param {number} data.booking_id - Related booking ID
  * @returns {Promise} Axios response
  */
-export const triggerStkPush = (data) => axiosInstance.post('/payments/stk-push', data);
+export const triggerStkPush = (data) => {
+    console.log("DEBUG: Current Axios Timeout config:", axiosInstance.defaults.timeout);
+    return axiosInstance.post('/payments/stk-push', data);
+};
