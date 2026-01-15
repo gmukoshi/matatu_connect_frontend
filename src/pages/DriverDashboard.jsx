@@ -226,7 +226,11 @@ const DriverDashboard = () => {
   // PAYMENT HANDLERS
   const openPaymentModal = (booking) => {
     setSelectedBookingForPayment(booking);
-    setPaymentForm({ phone: "", amount: "50" }); // Default amount or dynamic based on route
+    // Prefill phone number if available from the user profile (booking.user_phone)
+    setPaymentForm({
+      phone: booking.user_phone || "",
+      amount: "50"
+    });
     setShowPaymentModal(true);
   };
 

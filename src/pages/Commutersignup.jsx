@@ -11,7 +11,7 @@ export default function CommuterSignup() {
     firstname: "",
     secondname: "",
     email: "",
-    phone_number: "", // Add default
+    phone_number: "",
     password: "",
   });
 
@@ -129,6 +129,18 @@ export default function CommuterSignup() {
             </div>
 
             <div>
+              <label className="mc-label">Phone Number</label>
+              <input
+                type="tel"
+                name="phone_number"
+                value={formData.phone_number}
+                onChange={handleChange}
+                placeholder="0712345678"
+                className="mc-input"
+              />
+            </div>
+
+            <div>
               <label className="mc-label">Password</label>
               <input
                 type="password"
@@ -140,17 +152,7 @@ export default function CommuterSignup() {
               />
             </div>
 
-            <div>
-              <label className="mc-label">Phone Number</label>
-              <input
-                type="tel"
-                name="phone_number"
-                value={formData.phone_number}
-                onChange={handleChange}
-                placeholder="2547XXXXXXXX"
-                className="mc-input"
-              />
-            </div>
+
 
             {/* Social mock buttons */}
             <div className="grid grid-cols-2 gap-3 mt-4">
