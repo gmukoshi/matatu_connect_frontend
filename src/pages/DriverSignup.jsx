@@ -160,6 +160,21 @@ export default function DriverSignup() {
             </div>
 
             <div>
+              <label className="mc-label">Select Sacco</label>
+              <select
+                name="sacco_id"
+                value={formData.sacco_id || ""}
+                onChange={handleChange}
+                className="mc-input appearance-none bg-black/20"
+              >
+                <option value="">-- Choose Sacco --</option>
+                {saccos.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="mc-label">Password</label>
               <input
                 type="password"
