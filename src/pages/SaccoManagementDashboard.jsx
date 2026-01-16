@@ -246,6 +246,44 @@ export default function SaccoManagementDashboard() {
       </div>
 
 
+
+      {/* DRIVER LOGS SECTION */}
+      <div className="mc-card p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Recent Daily Logs</h3>
+        {recentLogs.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-text-muted">
+              <thead className="text-xs uppercase bg-white/5 text-white">
+                <tr>
+                  <th className="px-4 py-3 rounded-l-lg">Date</th>
+                  <th className="px-4 py-3">Driver</th>
+                  <th className="px-4 py-3">Vehicle</th>
+                  <th className="px-4 py-3">Passengers</th>
+                  <th className="px-4 py-3">Fuel (L)</th>
+                  <th className="px-4 py-3 rounded-r-lg">Mileage (km)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentLogs.slice(0, 5).map((log) => (
+                  <tr key={log.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                    <td className="px-4 py-3">{new Date(log.log_date).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-white font-medium">{log.driver_name}</td>
+                    <td className="px-4 py-3">Active Vehicle</td>
+                    <td className="px-4 py-3">{log.passengers}</td>
+                    <td className="px-4 py-3">{log.fuel_liters}</td>
+                    <td className="px-4 py-3">{log.mileage_km}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-text-muted text-center py-8 bg-white/5 rounded-xl border border-dashed border-white/10">
+            No daily logs submitted yet.
+          </p>
+        )}
+      </div>
+
       {/* SACCO SELECTION MODAL */}
       {showSaccoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
