@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useContext } from "react";
+import { getGreeting } from "../utils/greeting";
 import LiveMap from "../components/map/LiveMap";
 import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
@@ -132,7 +133,7 @@ const CommuterDashboard = () => {
       <div className="mb-8 flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-white">
-            Good Afternoon, {user?.name?.split(" ")[0] || "Commuter"} 👋
+            {getGreeting()}, {user?.name?.split(" ")[0] || "Commuter"} 👋
           </h1>
           <p className="text-text-muted mt-1">
             Track matatus and book rides in real-time

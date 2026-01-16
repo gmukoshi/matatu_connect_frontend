@@ -150,7 +150,9 @@ export default function SaccoManagementDashboard() {
     <div className="max-w-7xl mx-auto space-y-8 relative">
       {/* TOP HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-2xl font-bold text-white">Dashboard Overview</h1>
+        <h1 className="text-2xl font-bold text-white">
+          {getGreeting()}, {user?.name?.split(" ")[0] || "Manager"}!
+        </h1>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           {/* Action buttons moved to Sidebar/Dedicated pages */}
