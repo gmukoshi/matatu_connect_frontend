@@ -19,16 +19,6 @@ export default function DriverSignup() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [saccos, setSaccos] = useState([]);
-
-  useState(() => {
-    fetch("/api/saccos")
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === "success") setSaccos(data.data);
-      })
-      .catch(err => console.error("Error fetching Saccos:", err));
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,8 +39,7 @@ export default function DriverSignup() {
         password: formData.password,
         licence: formData.licence,
         plate: formData.plate,
-        role: "driver",
-        sacco_id: formData.sacco_id // Link to Sacco
+        role: "driver"
       };
       await signup(payload);
       navigate("/driver-dashboard");
@@ -157,21 +146,6 @@ export default function DriverSignup() {
                 placeholder="2547XXXXXXXX"
                 className="mc-input"
               />
-            </div>
-
-            <div>
-              <label className="mc-label">Select Sacco</label>
-              <select
-                name="sacco_id"
-                value={formData.sacco_id || ""}
-                onChange={handleChange}
-                className="mc-input appearance-none bg-black/20"
-              >
-                <option value="">-- Choose Sacco --</option>
-                {saccos.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
             </div>
 
             <div>
