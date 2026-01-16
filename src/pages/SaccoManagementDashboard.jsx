@@ -30,6 +30,8 @@ export default function SaccoManagementDashboard() {
     try {
       // Fetch Logs
       fetchLogs().then(res => {
+        console.log("Logs API Response:", res);
+        // Support both { data: [...] } and { data: { data: [...] } }
         const logs = Array.isArray(res.data) ? res.data : (res.data.data || []);
         setRecentLogs(logs);
       }).catch(err => console.error("Logs fetch failed", err));
