@@ -178,7 +178,7 @@ export default function DriversPage() {
                             </div>
                             <div className="flex items-center gap-3 text-sm text-text-muted p-2 bg-white/5 rounded-lg">
                                 <Phone size={16} />
-                                <span>No phone linked</span>
+                                <span>{driver.phone_number || "No phone linked"}</span>
                             </div>
 
                             {/* Assigned Matatu Info */}
