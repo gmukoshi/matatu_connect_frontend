@@ -231,7 +231,7 @@ const CommuterDashboard = () => {
 
               <div className="flex items-center justify-between mt-4">
                 <div className="text-xs text-text-muted">
-                  Driver: <span className="text-slate-300">{v.driverName || "Unknown"} (ID: {v.id})</span>
+                  Driver: <span className="text-slate-300">{v.driverName || "Unknown"}<br />📞 {v.driverPhone || "No contact"}</span>
                 </div>
                 <p className="text-xs font-semibold text-primary group-hover:underline">
                   Select Vehicle →
