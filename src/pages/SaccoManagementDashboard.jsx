@@ -12,6 +12,7 @@ import {
 
 import { fetchMatatus } from "../api/matatus";
 import { fetchRoutes } from "../api/routes";
+import { useApp } from "../context/AppContext"; // Import useApp
 import { fetchDrivers } from "../api/users";
 import { fetchSaccoStats } from "../api/dashboard";
 import { fetchLogs } from "../api/logs"; // Import log API
@@ -22,13 +23,18 @@ export default function SaccoManagementDashboard() {
 
   // Data States
   const [availableDrivers, setAvailableDrivers] = useState([]);
-  const [mapVehicles, setMapVehicles] = useState([]);
   const [saccoStats, setSaccoStats] = useState({ total_revenue: 0 });
   const [recentLogs, setRecentLogs] = useState([]); // New State for Logs
+
+  // Use Global App Context for Map Data (Syncs with Driver/Commuter views)
+  const { vehicles: mapVehicles, refreshVehicles } = useApp();
 
   // Fetch Data
   const loadData = async () => {
     try {
+      // Trigger global refresh to ensure map is up to date
+      if (refreshVehicles) refreshVehicles();
+
       // Fetch Logs
       fetchLogs().then(res => {
         console.log("Logs API Response:", res);
@@ -43,22 +49,6 @@ export default function SaccoManagementDashboard() {
 
       // Filter only active drivers (optional, but good for dashboard)
       setAvailableDrivers(driverData);
-
-      // Fetch Vehicles for Map
-      const resVehicles = await fetchMatatus();
-      const vehicleList = resVehicles.data?.data || resVehicles.data || [];
-
-      // Generate Mock Coordinates for each real vehicle (around Nairobi)
-      const mappedVehicles = vehicleList.map((v, index) => ({
-        id: v.id,
-        name: `${v.plate_number} (${v.route?.name || "Unassigned"})`,
-        // Random coords around Nairobi (-1.2921, 36.8219)
-        lat: -1.2921 + (Math.random() - 0.5) * 0.05,
-        lng: 36.8219 + (Math.random() - 0.5) * 0.05,
-        status: v.assignment_status
-      }));
-
-      setMapVehicles(mappedVehicles);
 
       // Fetch Sacco Stats
       const resStats = await fetchSaccoStats();

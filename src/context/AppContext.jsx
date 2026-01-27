@@ -269,8 +269,13 @@ export const AppProvider = ({ children }) => {
     );
   };
 
+  // Expose manual refresh
+  const refreshVehicles = () => {
+    loadData();
+  };
+
   return (
-    <AppContext.Provider value={{ vehicles, routes, bookingRequests, respondToBooking }}>
+    <AppContext.Provider value={{ vehicles, routes, bookingRequests, respondToBooking, refreshVehicles }}>
       {children}
     </AppContext.Provider>
   );
