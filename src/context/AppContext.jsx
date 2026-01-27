@@ -245,7 +245,7 @@ export const AppProvider = ({ children }) => {
           };
         })
       );
-    }, 3000); // Slower updates (3s) for smoother visualization jump
+    }, 10000); // Slower updates (10s) for smoother visualization jump
 
     return () => clearInterval(interval);
   }, []);

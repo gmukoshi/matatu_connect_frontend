@@ -38,7 +38,7 @@ const LiveMap = ({ vehicles = [], centerVehicle, showRoutes = false }) => {
           const lat = start.lat + (end.lat - start.lat) * progress;
           const lng = start.lng + (end.lng - start.lng) * progress;
 
-          progress += 0.02; // speed control
+          progress += 0.005; // speed control (slowed down)
           if (progress >= 1) {
             progress = 0;
             idx = (idx + 1) % route.length;
@@ -67,7 +67,8 @@ const LiveMap = ({ vehicles = [], centerVehicle, showRoutes = false }) => {
         <MatatuMarker key={v.id} vehicle={v} />
       ))}
 
-      {showRoutes && vehicles.map((v) =>
+      {/* Routes hidden as per user request to remove markings */}
+      {/* {showRoutes && vehicles.map((v) =>
         v.route && v.route.length > 1 ? (
           <Polyline
             key={v.id}
@@ -75,7 +76,7 @@ const LiveMap = ({ vehicles = [], centerVehicle, showRoutes = false }) => {
             options={{ strokeColor: "#F59E0B", strokeOpacity: 0.7, strokeWeight: 4 }}
           />
         ) : null
-      )}
+      )} */}
     </GoogleMap>
   );
 };
