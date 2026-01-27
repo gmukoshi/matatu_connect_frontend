@@ -179,7 +179,8 @@ const CommuterDashboard = () => {
       {/* MAP */}
       <div className="bg-surface-dark rounded-2xl p-4 mb-8">
         <LiveMap
-          vehicles={filteredVehicles}
+          vehicles={vehicles}
+          showRoutes={true}
           centerVehicle={filteredVehicles[0]}
         />
       </div>

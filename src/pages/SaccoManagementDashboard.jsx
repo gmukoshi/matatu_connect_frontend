@@ -247,7 +247,7 @@ export default function SaccoManagementDashboard() {
             <span className="text-[10px] font-bold bg-emerald-500 text-black px-2 py-0.5 rounded">Live</span>
           </div>
           <div className="flex-1 bg-surface-dark">
-            <LiveMap vehicles={mapVehicles} centerVehicle={mapVehicles[0]} />
+            <LiveMap vehicles={mapVehicles} centerVehicle={mapVehicles[0]} showRoutes={true} />
           </div>
         </div>
       </div>

@@ -748,7 +748,7 @@ const DriverDashboard = () => {
 
             <div className="flex-1 relative rounded-2xl overflow-hidden border border-white/5">
               {myVehicle ? (
-                <LiveMap vehicles={[myVehicle]} centerVehicle={myVehicle} />
+                <LiveMap vehicles={[myVehicle]} centerVehicle={myVehicle} showRoutes={true} />
               ) : (
                 <div className="flex items-center justify-center h-full text-text-muted bg-slate-900/50">
                   <p>No active vehicle assigned to track.</p>

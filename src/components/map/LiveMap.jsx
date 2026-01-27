@@ -16,7 +16,10 @@ const LiveMap = ({ vehicles = [], centerVehicle, showRoutes = false }) => {
   // Initialize vehicle positions
   useEffect(() => {
     vehicles.forEach((v) => {
-      if (!vehiclePositions.current[v.id]) vehiclePositions.current[v.id] = { idx: 0, progress: 0 };
+      if (!vehiclePositions.current[v.id]) {
+        // Use the distributed start index from AppContext if available
+        vehiclePositions.current[v.id] = { idx: v._posIndex || 0, progress: 0 };
+      }
     });
   }, [vehicles]);
 

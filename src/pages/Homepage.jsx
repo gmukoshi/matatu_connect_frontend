@@ -98,7 +98,7 @@ function Hero() {
 
       <div className="relative h-[600px] w-full bg-slate-900/60 rounded-[2.5rem] overflow-hidden border border-white/5 shadow-2xl shadow-emerald-900/20 group animate-fadeIn" style={{ animationDelay: "300ms" }}>
         <div className="absolute inset-0 z-0 opacity-80 group-hover:opacity-100 transition-opacity duration-700 filter saturate-150">
-          <LiveMap vehicles={heroVehicles} centerVehicle={heroVehicles[0]} />
+          <LiveMap vehicles={heroVehicles} centerVehicle={heroVehicles[0]} showRoutes={true} />
         </div>
 
         {/* Overlay Gradient */}
