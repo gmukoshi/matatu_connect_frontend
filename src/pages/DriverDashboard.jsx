@@ -503,7 +503,7 @@ const DriverDashboard = () => {
       {/* STATS GRID */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* EARNINGS CARD (Big Green) */}
-        <div className="lg:col-span-2 rounded-3xl p-8 relative overflow-hidden group">
+        <div className="lg:col-span-2 rounded-3xl p-8 relative overflow-hidden group h-full">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 transition-all duration-500 group-hover:scale-105" />
           <div className="absolute top-0 right-0 p-32 bg-white/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none mix-blend-overlay" />
 
@@ -531,13 +531,14 @@ const DriverDashboard = () => {
         </div>
 
         {/* SIDE STATS */}
-        <div className="space-y-6">
+        <div className="h-full flex flex-col gap-6">
           <StatCard
             icon={<Clock className="w-6 h-6 text-amber-400" />}
             label="Hours Online"
             value={onlineDuration}
             subtext={online ? "Currently Active" : "Offline"}
             variant="warning"
+            className="flex-1"
           />
           <StatCard
             icon={<Navigation className="w-6 h-6 text-emerald-400" />}
@@ -545,6 +546,7 @@ const DriverDashboard = () => {
             value={bookings.length.toString()}
             subtext="Total Passengers"
             variant="success"
+            className="flex-1"
           />
         </div>
       </div>
@@ -894,22 +896,22 @@ const DriverDashboard = () => {
 };
 
 // Helper Component for small stat cards
-function StatCard({ icon, label, value, subtext, variant = "default" }) {
+function StatCard({ icon, label, value, subtext, variant = "default", className = "" }) {
   const isSuccess = variant === "success";
   const isWarning = variant === "warning";
 
   return (
-    <div className="mc-card p-6 flex flex-col justify-between h-full group">
+    <div className={`mc-card p-6 flex flex-col justify-between h-full group ${className}`}>
       <div className="flex items-start justify-between mb-4">
         <div className={`p-3 rounded-2xl transition-colors ${isSuccess ? "bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20" :
-            isWarning ? "bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20" :
-              "bg-white/5 text-white"
+          isWarning ? "bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20" :
+            "bg-white/5 text-white"
           }`}>
           {icon}
         </div>
         <span className={`text-[10px] font-bold uppercase py-1 px-2 rounded-lg ${isSuccess ? "bg-emerald-500/10 text-emerald-400" :
-            isWarning ? "bg-amber-500/10 text-amber-400" :
-              "text-slate-500"
+          isWarning ? "bg-amber-500/10 text-amber-400" :
+            "text-slate-500"
           }`}>
           {subtext}
         </span>
