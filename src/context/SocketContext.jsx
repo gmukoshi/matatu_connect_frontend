@@ -10,7 +10,11 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // Connect to the backend
-    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+    const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    // Remove trailing slash if present to avoid //socket.io/ double slash issues
+    const socketUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+
+    const newSocket = io(socketUrl, {
       transports: ['websocket'], // Force websocket to avoid polling issues
       withCredentials: true,
     });
